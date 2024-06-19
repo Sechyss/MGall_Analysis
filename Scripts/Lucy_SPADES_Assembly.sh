@@ -8,7 +8,16 @@ for file in "$source_dir"/*_R1.fastq.gz; do
   filename=$(basename "$file")
 
   # Cut the filename after the string 'sickle'
-  newname=$(echo "$filename" | sed 's/sickle*//')
+  newname="${filename%%sickle*}"
 
-  python3 spades.py -1 /home/albertotr/OneDrive/Data/Cambridge_Project/SRA_reads/"$newname"_R1.fastq -2 /home/albertotr/OneDrive/Data/Cambridge_Project/SRA_reads/"$newname"_R2.fastq -s /home/albertotr/OneDrive/Data/Cambridge_Project/SRA_reads/"$newname"_single.fastq -o /home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_SPADES_denovo/"$newname"_assembly
+  # Define the output directory
+  output_dir="/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_SPADES_denovo/${newname}assembly"
+
+  # Check if the output directory already exists
+  if [ -d "$output_dir" ]; then
+    echo "Output directory $output_dir already exists. Skipping..."
+    continue
+  fi
+
+  python3 spades.py -1 /home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_reads/"$newname"sickle_R1.fastq.gz -2 /home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_reads/"$newname"sickle_R2.fastq.gz -s /home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_reads/"$newname"sickle_single.fastq.gz -o "$output_dir"
 done
