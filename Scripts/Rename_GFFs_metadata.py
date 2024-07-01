@@ -1,14 +1,14 @@
 import os
 import pandas as pd
 
-os.chdir('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/GFFs_genomes')
+os.chdir('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/CheckMbins/')
 
 metadata_sra = pd.read_excel('../SraRunTable_filtered.xlsx', sheet_name='Filtered_Accessions')
 
 for index, row in metadata_sra.iterrows():
     oldname = row['Run']
     newname = row['Sample Name'].replace(' ', '_')
-    os.rename(oldname + '.gff', newname + '.gff')
+    os.rename(oldname + '.fna', newname + '.fna')
 
 #%% Change the name of genome files
 
@@ -18,12 +18,12 @@ counter = 1
 for index, row in metadata_genomes.iterrows():
     oldname = row['Assembly Accession']
     newname = row['Organism Qualifier'].replace('strain: ', '').replace(' ', '_').replace('/', '_')
-    if oldname+'.gff' in os.listdir():
-        if newname+'.gff' in os.listdir():
-            os.rename(oldname + '.gff', newname + '_counter_'+str(counter)+'.gff')
+    if oldname+'.fna' in os.listdir():
+        if newname+'.fna' in os.listdir():
+            os.rename(oldname + '.fna', newname + '_counter_'+str(counter)+'.fna')
             counter += 1
         else:
-            os.rename(oldname + '.gff', newname + '.gff')
+            os.rename(oldname + '.fna', newname + '.fna')
             counter = 0
     else:
         continue

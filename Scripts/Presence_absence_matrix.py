@@ -1,4 +1,24 @@
+#%% import of packages and function
 import pandas as pd
+
+
+def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
+    dataframe_group1 = [col for col in dataframe.columns if col in group1]
+    dataframe_group2 = [col for col in dataframe.columns if col in group2]
+
+    # Calculate the presence ratio for house finch and poultry
+    presence_group1 = dataframe[dataframe_group1].notna().mean(axis=1)
+    presence_group2 = dataframe[dataframe_group2].notna().mean(axis=1)
+
+    # Filter genes present in at least 90% of house finch samples and less than 10% of poultry samples
+    filtered_genes_group1 = dataframe[
+        (presence_group1 >= filter1) & (presence_group2 <= filter2)]
+    filtered_genes_group2 = dataframe[
+        (presence_group1 <= filter2) & (presence_group2 >= filter1)]
+    return filtered_genes_group1, filtered_genes_group2
+
+
+#%%
 
 key_data = pd.read_excel('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Metadata_genomes.xlsx',
                          sheet_name='Metadata_Keys')
@@ -21,16 +41,13 @@ poultry_post2007 = list(
         'Sample Name'])
 
 Presence_absence = pd.read_csv('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
-                               'pangenome_results_genomes/gene_presence_absence.csv')
+                               'pangenome_results_filtered/gene_presence_absence.csv')
 
-# Filter the relevant sample columns for house finch and poultry
-housefinch_samples = [col for col in Presence_absence.columns if col in housefinch_all]
-poultry_samples = [col for col in Presence_absence.columns if col in poultry_all]
+#%% Filter the relevant sample columns for house finch and poultry
 
-# Calculate the presence ratio for house finch and poultry
-housefinch_presence = Presence_absence[housefinch_samples].notna().mean(axis=1)
-poultry_presence = Presence_absence[poultry_samples].notna().mean(axis=1)
+filtered_genes, filtered_genes_2 = filter_presence_absence(Presence_absence, housefinch_all, poultry_all, 0.9, 0.1)
 
-# Filter genes present in at least 90% of house finch samples and less than 10% of poultry samples
-filtered_genes = Presence_absence[(housefinch_presence >= 0.9) & (poultry_presence < 0.1)]
-filtered_genes_2 = Presence_absence[(housefinch_presence < 0.1) & (poultry_presence >= 0.9)]
+#%% Testing pre and post 2007
+
+filtered_genes_pre2007, filtered_genes_post2007 = filter_presence_absence(Presence_absence, housefinch_pre2007,
+                                                                          housefinch_post2007, 0.4, 0.1)
