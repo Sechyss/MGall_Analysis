@@ -1,5 +1,7 @@
 #%% import of packages and function
 import pandas as pd
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 
 def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
@@ -50,4 +52,24 @@ filtered_genes, filtered_genes_2 = filter_presence_absence(Presence_absence, hou
 #%% Testing pre and post 2007
 
 filtered_genes_pre2007, filtered_genes_post2007 = filter_presence_absence(Presence_absence, housefinch_pre2007,
-                                                                          housefinch_post2007, 0.4, 0.1)
+                                                                          housefinch_post2007, 0.15, 0)
+
+#%% Creation of FASTA file with the list of genes
+
+list_genes = filtered_genes_post2007['Gene'].to_list()
+
+pangenome_reference = SeqIO.parse('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
+                                  'pangenome_results_filtered/pan_genome_reference.fa', 'fasta')
+
+with open('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
+          'pangenome_results_filtered/Genes_to_study.fasta', 'a') as f2:
+    with open('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
+              'pangenome_results_filtered/Genes_to_study.faa', 'a') as f1:
+        for gene in pangenome_reference:
+            if gene.id in list_genes:
+                sequence = gene.seq
+                prot_sequence = sequence.translate(table=4, stop_symbol='', )
+                seq_record = SeqRecord(sequence, id=gene.id, description='')
+                seq_record_2 = SeqRecord(prot_sequence, id=gene.id, description='')
+                SeqIO.write(seq_record, f2, 'fasta')
+                SeqIO.write(seq_record_2, f1, 'fasta')
