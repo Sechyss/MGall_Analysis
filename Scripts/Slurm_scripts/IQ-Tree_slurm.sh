@@ -29,6 +29,7 @@ echo "working directory = "$SLURM_SUBMIT_DIR
 for file in /nobackup/beegfs/workspace/at991/Data/tree_alignments/*.fasta; do
   # Extract the filename from the full path
   filename=$(basename "$file")
-  iqtree -s file --prefix "$filename" -m GTR+F+I+G4 -bb 1000 -t 20
+  newname="${filename%%.fasta*}"
+  iqtree -s file --prefix "$newname" -m GTR+F+I+G4 -bb 1000 -t 20
 done
 

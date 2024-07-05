@@ -15,17 +15,16 @@
 ##SBATCH --requeue                          # Specifies that the job will be requeued after a node failure.
                                             # The default is that the job will not be requeued.
 
-
-
-cd /nobackup/beegfs/workspace/at991/Data/Lucy_reads/ || exit
-module load BBTools/38.39
-
 echo "SLURM_JOBID="$SLURM_JOBID
 echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
 echo "SLURM_NNODES"=$SLURM_NNODES
 echo "SLURMTMPDIR="$SLURMTMPDIR
 echo "working directory = "$SLURM_SUBMIT_DIR
 
+module load BBTools/38.39
+module load samtools/1.10
+
+cd /nobackup/beegfs/workspace/at991/Data/Lucy_reads/ || exit
 bbmap.sh ref=/nobackup/beegfs/workspace/at991/Data/R.fna
 
 # List all files in the directory and process each one
@@ -40,4 +39,20 @@ for file in /nobackup/beegfs/workspace/at991/Data/Lucy_reads/*_R1.fastq.gz; do
   output_dir="/nobackup/beegfs/workspace/at991/Data/Mapped_output/${newname}.sam"
 
   bbwrap.sh build=1 in1=/nobackup/beegfs/workspace/at991/Data/Lucy_reads/"$newname"sickle_R1.fastq.gz,/nobackup/beegfs/workspace/at991/Data/Lucy_reads/"$newname"sickle_single.fastq.gz in2=/nobackup/beegfs/workspace/at991/Data/Lucy_reads/"$newname"sickle_R2.fastq.gz,null -out="$output_dir"
+done
+
+cd /nobackup/beegfs/workspace/at991/Data/Mapped_output/ || exit
+
+for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output/*sam; do
+  # Extract the filename from the full path
+  filename=$(basename "$file")
+
+  # Cut the filename after the string 'nophi'
+  newname="${filename%%_nophi_*}"
+
+  # Define the output directory
+  output_dir="/nobackup/beegfs/workspace/at991/Data/Mapped_output/${newname}.bam"
+
+  samtools sort -l 8 -o "$output_dir" -O BAM --threads 16 /nobackup/beegfs/workspace/at991/Data/Mapped_output/"$newname"_nophi_.sam
+
 done
