@@ -2,6 +2,10 @@ import pandas as pd
 import os
 import glob
 import pickle
+import warnings
+
+# Suppress FutureWarning messages
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 key_data = pd.read_excel('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Metadata_genomes.xlsx',
                          sheet_name='Metadata_Keys')
@@ -18,6 +22,7 @@ columns_table = ['system.number', 'seqid', 'system', 'target.name', 'hmm.accessi
                  'target.description', 'relative.position', 'contig.end', 'all.domains',
                  'best.hits']
 collector_data = pd.DataFrame(columns=columns_table)
+os.chdir('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Padloc_results/')
 for file in os.listdir('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Padloc_results/'):
     if file.endswith('.csv'):
         filename = file.replace('_padloc.csv', '')
@@ -30,20 +35,22 @@ for file in os.listdir('/Users/at991/OneDrive - University of Exeter/Data/Cambri
 filtering_dict = pickle.load(
     open('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/filtering_dict.pickle', 'rb'))
 
-mech_pre2007_HF = collector_data[collector_data['Genome'].isin(filtering_dict['Housefinch_pre2007'])]
-mech_post2007_HF = collector_data[collector_data['Genome'].isin(filtering_dict['Housefinch_post2007'])]
-
-mech_pre2007_poul = collector_data[collector_data['Genome'].isin(filtering_dict['Poultry_pre2007'])]
-mech_post2007_poul = collector_data[collector_data['Genome'].isin(filtering_dict['Poultry_post2007'])]
-
 #%% Extraction of data from VIBRANT
 
 collector_data_2 = pd.DataFrame()
 for file in glob.glob('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
-                      'CheckMbins/*_vibrant/VIBRANT_*/VIBRANT_results_*/VIBRANT_summary_normalized_*tsv'):
+                      'CheckMbins/*_vibrant/VIBRANT_*/VIBRANT_results_*/VIBRANT_summary_results_*tsv'):
     table = pd.read_table(file, sep='\t')
-    filename = str(os.path.basename(file)).replace('VIBRANT_summary_normalized_', '').replace('.tsv', '')
+    filename = str(os.path.basename(file)).replace('VIBRANT_summary_results_', '').replace('.tsv', '')
     table['Genome'] = str(filename)
     table['Host'] = key_data.loc[filename, 'Host']
     table['Date'] = key_data.loc[filename, 'Date']
-    collector_data_2 = pd.concat([collector_data_2, table], ignore_index=True)
+    table_2 = pd.read_table(str(file).replace('VIBRANT_summary_results_', 'VIBRANT_genome_quality_'), sep='\t')
+    new_df = table.merge(table_2, how='outer', on='scaffold')
+    collector_data_2 = pd.concat([collector_data_2, new_df], ignore_index=True)
+
+writer = pd.ExcelWriter('/Users/at991/OneDrive - University of Exeter/Data/'
+                        'Cambridge_Project/Metadata_phage_analysis.xlsx', engine='openpyxl')
+collector_data.to_excel(writer, index=False, sheet_name='Padloc_analysis')
+collector_data_2.to_excel(writer, index=False, sheet_name='Vibrant_analysis')
+writer.close()

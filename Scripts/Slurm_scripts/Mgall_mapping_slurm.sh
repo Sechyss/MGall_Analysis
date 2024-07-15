@@ -2,7 +2,7 @@
 
 #SBATCH --partition=defq
 #SBATCH --job-name=BBmap
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=16
 #SBATCH --ntasks=16                         # Run a single task (increase this value for parallelisation across CPUs)

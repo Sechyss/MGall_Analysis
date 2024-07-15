@@ -30,6 +30,6 @@ for file in /nobackup/beegfs/workspace/at991/Data/tree_alignments/*.fasta; do
   # Extract the filename from the full path
   filename=$(basename "$file")
   newname="${filename%%.fasta*}"
-  iqtree -s file --prefix "$newname" -m GTR+F+I+G4 -bb 1000 -t 20
+  iqtree -s "$file" --prefix "$newname" -m GTR+F+I+G4 -B 1000 -nt AUTO
 done
 
