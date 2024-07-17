@@ -1,7 +1,7 @@
 import os
 
 
-def rename_files(directory):
+def rename_files(directory, oldstring, newstring):
     # Iterate over all files in the directory
     for filename in os.listdir(directory):
         # Construct full file path
@@ -10,7 +10,7 @@ def rename_files(directory):
         # Check if it is a file
         if os.path.isfile(old_file):
             # Replace '-' with '_' in the file name
-            new_filename = filename.replace('-', '_')
+            new_filename = filename.replace(oldstring, newstring)
             new_file = os.path.join(directory, new_filename)
 
             # Rename the file
@@ -18,7 +18,7 @@ def rename_files(directory):
             print(f'Renamed: {old_file} -> {new_file}')
 
 
-def rename_directories(directory):
+def rename_directories(directory, oldstring, newstring):
     # Iterate over all items in the directory
     for item in os.listdir(directory):
         # Construct full item path
@@ -27,7 +27,7 @@ def rename_directories(directory):
         # Check if it is a directory
         if os.path.isdir(old_item):
             # Replace '-' with '_' in the directory name
-            new_item_name = item.replace('-', '_')
+            new_item_name = item.replace(oldstring, newstring)
             new_item = os.path.join(directory, new_item_name)
 
             # Rename the directory
@@ -36,5 +36,5 @@ def rename_directories(directory):
 
 
 # Specify the directory you want to rename files in
-directory_path = '/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/CheckMbins/'
-rename_files(directory_path)
+directory_path = '/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Mapped_output_WI01_2001_043_13_2P/SAMFiles'
+rename_files(directory_path, '_nophi', '')
