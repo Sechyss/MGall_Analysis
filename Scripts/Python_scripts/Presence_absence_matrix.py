@@ -71,19 +71,19 @@ filtered_genes_early_HF, filtered_genes_poultry = filter_presence_absence(Presen
 
 #%% Creation of FASTA file with the list of genes
 
-list_genes = filtered_genes['Gene'].to_list()
+list_genes = filtered_genes_pre2007['Gene'].to_list()
 
 pangenome_reference = SeqIO.parse('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
                                   'pangenome_results_filtered/pan_genome_reference.fa', 'fasta')
 
 with open('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
-          'pangenome_results_filtered/Genes_to_study_new_core_HF.fasta', 'a') as f2:
+          'pangenome_results_filtered/Genes_to_study_pre2007_HF.fasta', 'a') as f2:
     with open('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/'
-              'pangenome_results_filtered/Genes_to_study_new_core_HF.faa', 'a') as f1:
+              'pangenome_results_filtered/Genes_to_study_pre2007_HF.faa', 'a') as f1:
         for gene in pangenome_reference:
             if gene.id in list_genes:
                 sequence = gene.seq
-                prot_sequence = sequence.translate(table=4, stop_symbol='', )
+                prot_sequence = sequence.translate(table=4, stop_symbol='')
                 seq_record = SeqRecord(sequence, id=gene.id, description='')
                 seq_record_2 = SeqRecord(prot_sequence, id=gene.id, description='')
                 SeqIO.write(seq_record, f2, 'fasta')

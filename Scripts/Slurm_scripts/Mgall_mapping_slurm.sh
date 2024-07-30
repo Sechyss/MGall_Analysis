@@ -25,7 +25,7 @@ module load BBTools/38.39
 module load samtools/1.10
 
 cd /nobackup/beegfs/workspace/at991/Data/Lucy_reads/ || exit
-bbmap.sh ref=/nobackup/beegfs/workspace/at991/Data/WI01_2001_043_13_2P.fna
+bbmap.sh ref=/nobackup/beegfs/workspace/at991/Data/VA94_7994_1_7P.fna
 
 # List all files in the directory and process each one
 for file in /nobackup/beegfs/workspace/at991/Data/Lucy_reads/*_R1.fastq.gz; do
@@ -36,14 +36,14 @@ for file in /nobackup/beegfs/workspace/at991/Data/Lucy_reads/*_R1.fastq.gz; do
   newname="${filename%%_sickle*}"
 
   # Define the output directory
-  output_dir="/nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/${newname}.sam"
+  output_dir="/nobackup/beegfs/workspace/at991/Data/Mapped_output_VA94_7994_1_7P/${newname}.sam"
 
   bbwrap.sh build=1 in1=/nobackup/beegfs/workspace/at991/Data/Lucy_reads/"$newname"_sickle_R1.fastq.gz,/nobackup/beegfs/workspace/at991/Data/Lucy_reads/"$newname"_sickle_single.fastq.gz in2=/nobackup/beegfs/workspace/at991/Data/Lucy_reads/"$newname"_sickle_R2.fastq.gz,null -out="$output_dir"
 done
 
-cd /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/ || exit
+cd /nobackup/beegfs/workspace/at991/Data/Mapped_output_VA94_7994_1_7P/ || exit
 
-for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/*sam; do
+for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output_VA94_7994_1_7P/*sam; do
   # Extract the filename from the full path
   filename=$(basename "$file")
 
@@ -51,8 +51,8 @@ for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13
   newname="${filename%%_nophi*}"
 
   # Define the output directory
-  output_dir="/nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/${newname}.bam"
+  output_dir="/nobackup/beegfs/workspace/at991/Data/Mapped_output_VA94_7994_1_7P/${newname}.bam"
 
-  samtools sort -l 8 -o "$output_dir" -O BAM --threads 16 /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/"$newname"_nophi.sam
+  samtools sort -l 8 -o "$output_dir" -O BAM --threads 16 /nobackup/beegfs/workspace/at991/Data/Mapped_output_VA94_7994_1_7P/"$newname"_nophi.sam
 
 done

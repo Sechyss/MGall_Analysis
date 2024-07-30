@@ -1,11 +1,11 @@
 #!/bin/bash -l
 
 #SBATCH --partition=defq
-#SBATCH --job-name=VCF
+#SBATCH --job-name=VCF_WI01_2001_043_13_2P
 #SBATCH --time=48:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
-#SBATCH --ntasks=16                         # Run a single task (increase this value for parallelisation across CPUs)
+#SBATCH --ntasks-per-node=20
+#SBATCH --ntasks=20                         # Run a single task (increase this value for parallelisation across CPUs)
 #SBATCH --account=c.bonneaud                # The accounting code - usually named after the PI for a project
 #SBATCH --constraint=IB                     # Specify features required by the job
 #SBATCH --mem=23000                         # Memory per node specification is in MB. It is optional.
@@ -28,6 +28,10 @@ cd /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/ || e
 for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/*bam; do
   # Extract the filename from the full path
   filename=$(basename "$file")
+  if [ -e "$filename".fasta ]; then
+        echo "Output file $filename already exists. Skipping $filename."
+        continue
+    fi
   bcftools mpileup -f /nobackup/beegfs/workspace/at991/Data/WI01_2001_043_13_2P.fna "$file" | bcftools call --ploidy 1 -mv -Ob -o calls.bcf
   bcftools view -i '%QUAL>=10' -V indels calls.bcf > "$filename".raw.vcf
   bgzip -f "$filename".raw.vcf
