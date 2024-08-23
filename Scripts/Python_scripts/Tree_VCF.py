@@ -1,0 +1,17 @@
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+import os
+
+from tqdm import tqdm
+
+os.chdir('/home/albertotr/OneDrive/Data/'
+         'Cambridge_Project/Mapped_output_Rlow/')
+with open('VCF_variants_PRO1494_Plate1_E2.tsv', 'a') as handle:
+    for file in tqdm(os.listdir('/home/albertotr/OneDrive/Data/'
+                                'Cambridge_Project/Mapped_output_Rlow/')):
+        if file.endswith('.bam.fasta'):
+            fastafile = SeqIO.parse(file, 'fasta')
+            for record in fastafile:
+                header = str(file).replace('.bam.fasta', '')
+                sequence = str(record.seq)
+                handle.write(header+'\t'+str(sequence) + '\n')

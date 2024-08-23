@@ -1,14 +1,13 @@
 #!/bin/bash -l
 
 #SBATCH --partition=defq
-#SBATCH --job-name=VCF_WI01_2001_043_13_2P
-#SBATCH --time=48:00:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=20
-#SBATCH --ntasks=20                         # Run a single task (increase this value for parallelisation across CPUs)
+#SBATCH --job-name=VCF_Rlow
+#SBATCH --time=96:00:00
+#SBATCH --nodes=3
+#SBATCH --ntasks-per-node=32
+#SBATCH --ntasks=32                         # Run a single task (increase this value for parallelization across CPUs)
 #SBATCH --account=c.bonneaud                # The accounting code - usually named after the PI for a project
 #SBATCH --constraint=IB                     # Specify features required by the job
-#SBATCH --mem=23000                         # Memory per node specification is in MB. It is optional.
 #SBATCH --output=vcf_Lucy-%j.out            # Standard output and error log
 #SBATCH --mail-type=ALL                     # Mail events (NONE, BEGIN, END, FAIL, ALL)
 #SBATCH --mail-user=at991@exeter.ac.uk      # E-Mail address of the user that needs to be notified.
@@ -23,18 +22,18 @@ echo "working directory = "$SLURM_SUBMIT_DIR
 
 module load bcftools/1.9
 
-cd /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/ || exit
+cd /nobackup/beegfs/workspace/at991/Data/Mapped_output_Rlow/ || exit
 
-for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output_WI01_2001_043_13_2P/*bam; do
+for file in /nobackup/beegfs/workspace/at991/Data/Mapped_output_Rlow/*bam; do
   # Extract the filename from the full path
   filename=$(basename "$file")
-  if [ -e "$filename".fasta ]; then
+  if [ -e "$filename".bam.raw.vcf ]; then
         echo "Output file $filename already exists. Skipping $filename."
         continue
-    fi
-  bcftools mpileup -f /nobackup/beegfs/workspace/at991/Data/WI01_2001_043_13_2P.fna "$file" | bcftools call --ploidy 1 -mv -Ob -o calls.bcf
-  bcftools view -i '%QUAL>=10' -V indels calls.bcf > "$filename".raw.vcf
+  fi
+  bcftools mpileup -f /nobackup/beegfs/workspace/at991/Data/R.fna --threads 32 "$file" | bcftools call --threads 32 --ploidy 1 -mv -Ob -o calls.bcf
+  bcftools view --threads 40 -i '%QUAL>=10' -V indels calls.bcf > "$filename".raw.vcf
   bgzip -f "$filename".raw.vcf
-  bcftools index "$filename".raw.vcf.gz
-  bcftools consensus -f /nobackup/beegfs/workspace/at991/Data/WI01_2001_043_13_2P.fna "$filename".raw.vcf.gz > "$filename".fasta
+  bcftools index --threads 20 "$filename".raw.vcf.gz
+  bcftools consensus -f /nobackup/beegfs/workspace/at991/Data/R.fna "$filename".raw.vcf.gz > "$filename".fasta
 done
