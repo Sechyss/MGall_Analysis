@@ -13,5 +13,6 @@ with open('VCF_variants_PRO1494_Plate1_E2.tsv', 'a') as handle:
             fastafile = SeqIO.parse(file, 'fasta')
             for record in fastafile:
                 header = str(file).replace('.bam.fasta', '')
-                sequence = str(record.seq)
-                handle.write(header+'\t'+str(sequence) + '\n')
+                sequence = record.seq
+                seq_record = SeqRecord(sequence, id=header, description='')
+                SeqIO.write(seq_record, handle, 'fasta')

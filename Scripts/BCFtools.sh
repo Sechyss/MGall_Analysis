@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cd Mapped_output_Rlow/ || exit
+cd Mapped_output_SRA_Rlow/ || exit
 
-for file in ~/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/*bam; do
+for file in ~/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_Rlow/*bam; do
   # Extract the filename from the full path
   filename=$(basename "$file")
   if [ -e "$filename".fasta ]; then
