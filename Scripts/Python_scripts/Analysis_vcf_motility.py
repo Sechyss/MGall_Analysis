@@ -7,8 +7,11 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+# Initialize dictionaries to store gene data
 collector_dict = {}
 gene_names = {}
+
+# Parse the GFF file to populate dictionaries
 for record in GFF.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCF_000286675.1/genomic.gff'):
     for genes in record.features:
         if genes.id == '':
@@ -24,11 +27,16 @@ for record in GFF.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/d
             finally:
                 continue
 
+# Remove irrelevant entries
+collector_dict.pop('NC_018406.1:1..964110', None)
+collector_dict.pop('id-NC_018406.1:317779..317884', None)
+collector_dict.pop('id-NC_018406.1:888405..890816', None)
 
-collector_dict.pop('NC_018406.1:1..964110')
+# Initialize DataFrame to collect VCF data
 collection_vcf = pd.DataFrame(columns=['Sample', 'Reference', 'Alternative', 'Position', 'Effect'])
-os.chdir('/home/albertotr/OneDrive/Data/'
-                               'Cambridge_Project/Mapped_output_VA94_7994_1_7P/snpEff_results_virginia/')
+
+# Process VCF files
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/snpEff_results_virginia/')
 for file in os.listdir():
     if file.endswith('.vcf'):
         vcf_reader = pysam.VariantFile(file, 'r')
@@ -45,14 +53,19 @@ for file in os.listdir():
                     list_alts.append(record.alts[0])
                     list_pos.append(record.pos)
                     list_effects.append(element)
-            finally:
+            except KeyError:
                 continue
 
-        adding_df = pd.DataFrame({'Sample': filename, 'Reference': list_refs, 'Alternative': list_alts,
-                                                'Position': list_pos, 'Effect': list_effects})
+        adding_df = pd.DataFrame({
+            'Sample': filename,
+            'Reference': list_refs,
+            'Alternative': list_alts,
+            'Position': list_pos,
+            'Effect': list_effects
+        })
         collection_vcf = pd.concat([collection_vcf, adding_df], ignore_index=True)
 
-# Define a function to find the corresponding gene ID for a SNP position
+# Define a function to find the corresponding gene ID for SNP position
 def find_gene_id(position, gene_dict):
     for gene_id, (beginning, end_pos) in gene_dict.items():
         if beginning <= position <= end_pos:
@@ -63,42 +76,56 @@ def find_gene_id(position, gene_dict):
 def map_values(value, mapping):
     return mapping.get(value, value)
 
-
-
-# Apply the function to add the 'Gene_ID' column to the non_synonymous DataFrame
+# Apply the function to add the 'Gene_ID' column
 collection_vcf['Gene_ID'] = collection_vcf['Position'].apply(lambda pos: find_gene_id(pos, collector_dict))
 collection_vcf['Gene_product'] = collection_vcf['Gene_ID'].apply(lambda x: map_values(x, gene_names))
 
-non_synonymous = collection_vcf[(collection_vcf['Effect'].str.contains('STOP')) |
-                                (collection_vcf['Effect'].str.contains('NON_SYNONYMOUS'))]
+# Filter non-synonymous SNPs
+non_synonymous = collection_vcf[collection_vcf['Effect'].str.contains('STOP') ]# |
+                               # (collection_vcf['Effect'].str.contains('NON_SYNONYMOUS'))]
 
-# %% Analysis of the data collected based on the Ipoutcha paper
+# Define strains
+motility_strains = ['A1', 'F1', 'F4', 'A10', 'E11', 'E12']
+non_motility_strains = ['B2', 'A9', 'D8', 'C3', 'B8']
 
-locustag_motility = ['HFMG94VAA_RS00385', 'HFMG94VAA_RS01105', 'HFMG94VAA_RS02755', 'HFMG94VAA_RS03655',
-                     'HFMG94VAA_RS03725', 'HFMG94VAA_RS04385']
-motility_strains, non_motility_strains = ['A1', 'F1', 'F4', 'A10', 'E11', 'E12'], ['B2', 'A9', 'D8', 'C3', 'B8']
+# Separate non-synonymous SNPs into motility and non-motility strains
 non_synonymous_motility = non_synonymous[non_synonymous['Sample'].isin(motility_strains)]
 non_synonymous_non_motility = non_synonymous[non_synonymous['Sample'].isin(non_motility_strains)]
 
-# Group by gene_id and count the number of unique strains
-gene_strain_count = non_synonymous_non_motility.groupby('Gene_ID')['Sample'].nunique()
+# Identify genes present in non-motility strains
+genes_in_non_motility = set(non_synonymous_non_motility['Gene_ID'])
 
-# Filter gene_ids that are present in exactly 5 unique strains
-genes_in_5_strains = gene_strain_count[gene_strain_count == len(non_motility_strains)].index
+# Identify genes present in motility strains
+genes_in_motility = set(non_synonymous_motility['Gene_ID'])
 
-# Filter the original DataFrame to keep only these gene_ids
-filtered_df = non_synonymous_non_motility[non_synonymous_non_motility['Gene_ID'].isin(genes_in_5_strains)]
+# Find genes that are in non-motility strains but not in motility strains
+genes_only_in_non_motility = genes_in_non_motility.difference(genes_in_motility)
 
-list_genes_motility = list(set(filtered_df['Gene_ID']))
+# Filter the DataFrame to keep only these gene IDs
+filtered_df = non_synonymous_non_motility[non_synonymous_non_motility['Gene_ID'].isin(genes_only_in_non_motility)]
+
+# List of gene IDs that are non-synonymous and in non-motile strains but not in motile strains
+list_genes_non_motility = list(sorted(set(filtered_df['Gene_ID'])))
 
 # %% Creation of fasta file of genes of interest.
-with open('Non_motile_variant_proteins.fasta', 'a') as handle:
+with open('Non_motile_variant_proteins_stop_codon.fasta', 'a') as handle:
     for genome in SeqIO.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCF_000286675.1/genomic.gbff', 'genbank'):
         for feature in genome.features:
             if feature.type == "CDS":  # Find CDS to collect the information
                 locustag = str(feature.qualifiers["locus_tag"][0]).replace(' ', '_')
-                if locustag in list_genes_motility:
-                    if feature.qualifiers["translation"][0]:
+                if locustag in list_genes_non_motility:
+                    if "translation" in feature.qualifiers.keys():
                         aaseq = Seq(feature.qualifiers["translation"][0])
                         fasta_aa = SeqRecord(aaseq, locustag, description='')
                         SeqIO.write(fasta_aa, handle, 'fasta')
+
+#%% Create student matrix
+student_matrix = pd.DataFrame(columns=list(collection_vcf['Sample'].unique()), index=list(collector_dict.keys())).fillna(0)
+
+for index, row in collection_vcf.iterrows():
+    try:
+        student_matrix[row['Sample']][row['Gene_ID']] += 1
+    finally:
+        continue
+
+student_matrix.to_csv('Matrix_mutations_SNPs.tsv', sep='\t')
