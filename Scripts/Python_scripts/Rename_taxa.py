@@ -13,13 +13,13 @@ for index, row in dataset_keys.iterrows():
 sorted_replacements = dict(sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True))
 
 # Change directory to where the .contree files are located
-os.chdir('/home/albertotr/OneDrive/Data/Ipoutcha_motility/BLAST_db/Phylogenetic_trees/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/VCF_trees/')
 
 # Iterate over all files ending with .contree in the directory
 for filename in os.listdir():
-    if filename.endswith('.contree'):
+    if filename.endswith('.treefile'):
         # Construct the new filename with 'Edited_' prefix
-        new_filename = 'Edited_' + filename
+        new_filename = 'Aln_' + filename
 
         # Open the current file and create a new file with the edited name
         with open(filename, 'r') as infile, open(new_filename, 'w') as outfile:
