@@ -4,38 +4,26 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from tqdm import tqdm
 
+# Load sequences
 sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Edited_Rlow_consensus_strains_onlyLucy.fasta'
-
 alignment = AlignIO.read(sequences, format="fasta")
-counter = 1
-coordinates = []
-for record in alignment:
-        sequence = record.seq
-        for aminoacid in sequence:
-            coordinates.append(counter)
-            counter += 1
-        break
 
-df = pd.DataFrame(index=[records.id for records in alignment], columns=coordinates)
+# Create column coordinates based on the length of the sequence
+coordinates = list(range(1, len(alignment[0].seq) + 1))
 
-for i, col in tqdm(enumerate(alignment)):
-    aligment_id = col.id
-    all_seq = col.seq
-    for index, aminoacid in enumerate(all_seq):
-        df.loc[aligment_id, coordinates[index]] = aminoacid
+# Build DataFrame directly
+data = {record.id: list(record.seq) for record in tqdm(alignment)}
+df = pd.DataFrame(data, index=coordinates).T
 
-# Calculate the threshold for 60% of rows
+# Remove columns with more than 60% gaps
 threshold = len(df) * 0.6
+df2 = df.loc[:, (df == '-').sum(axis=0) <= threshold]
 
-# Drop columns where '-' appears in more than 60% of the cells
-df2 = df.drop(columns=[col for col in df.columns if (df[col] == '-').sum() > threshold])
+# Combine each row into a single string for FASTA output
+df2['Sequence'] = df2.apply(lambda row: ''.join(row.astype(str)), axis=1)
 
-# Combine all data in each row into a single string
-df2['Sequence'] = df2.apply(lambda row: ' '.join(row.astype(str)), axis=1)
-
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Edited_Rlow_consensus_strains_onlyLucy_trimmed.fasta') as f:
-    for index, row in df2.iterrows():
-        sequence = row['Sequence']
-        sequence_id =  index
-        seq_record = SeqRecord(seq=Seq(sequence), id=str(sequence_id), description='')
-        SeqIO.write(seq_record, f, 'fasta')
+# Write the trimmed sequences to FASTA file in one go
+output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Edited_Rlow_consensus_strains_onlyLucy_trimmed.fasta'
+seq_records = [SeqRecord(seq=Seq(row['Sequence']), id=str(index), description='') for index, row in df2.iterrows()]
+with open(output_path, 'w') as f:
+    SeqIO.write(seq_records, f, 'fasta')
