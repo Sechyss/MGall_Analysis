@@ -15,9 +15,9 @@ def sequence_dictionary(fastafile):
 fasta_masked_alb = sequence_dictionary('/home/albertotr/OneDrive/Data/Cambridge_Project/'
                                'VCF_trees/Gubbins_Rlow_onlyLucy/Rlow_gubbins.masked.aln')
 fasta_masked_lcy = sequence_dictionary('/home/albertotr/OneDrive/Data/Cambridge_Project/'
-                                       'VCF_trees/core_recombination_stripped.fasta')
+                                       'VCF_trees/Rlow_Lucy.masked.aln')
 
-for keys in tqdm(fasta_masked_alb.keys()):
+for keys in tqdm(fasta_masked_lcy.keys()):
     with open('/home/albertotr/OneDrive/Data/Cambridge_Project/'
                                        'VCF_trees/Lucy_alb_alignment_comparison/'+keys+'.fasta','a') as fasta_out:
         alb_id = str(keys)+'_alb'

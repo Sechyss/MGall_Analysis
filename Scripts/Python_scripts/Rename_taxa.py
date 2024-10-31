@@ -13,11 +13,11 @@ for index, row in dataset_keys.iterrows():
 sorted_replacements = dict(sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True))
 
 # Change directory to where the .contree files are located
-os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/All_Variants_called/')
 
 # Iterate over all files ending with .contree in the directory
 for filename in os.listdir():
-    if filename.endswith('onlyLucy.fasta'):
+    if filename.endswith('consensus.fasta'):
         # Construct the new filename with 'Edited_' prefix
         new_filename = 'Edited_' + filename
 

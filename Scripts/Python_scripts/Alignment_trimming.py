@@ -1,29 +1,26 @@
-import pandas as pd
 from Bio import AlignIO, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from tqdm import tqdm
 
 # Load sequences
-sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Edited_Rlow_consensus_strains_onlyLucy.fasta'
+sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_spns.masked.aln'
 alignment = AlignIO.read(sequences, format="fasta")
 
-# Create column coordinates based on the length of the sequence
-coordinates = list(range(1, len(alignment[0].seq) + 1))
+# Identify columns with no gaps in any sequence
+alignment_length = alignment.get_alignment_length()
+columns_to_keep = [
+    i for i in range(alignment_length)
+    if all(record.seq[i] != '-' for record in alignment)
+]
 
-# Build DataFrame directly
-data = {record.id: list(record.seq) for record in tqdm(alignment)}
-df = pd.DataFrame(data, index=coordinates).T
+# Extract sequences based on gap-free columns
+filtered_sequences = []
+for record in tqdm(alignment):
+    filtered_seq = ''.join(record.seq[i] for i in columns_to_keep)
+    filtered_sequences.append(SeqRecord(Seq(filtered_seq), id=record.id, description=''))
 
-# Remove columns with more than 60% gaps
-threshold = len(df) * 0.6
-df2 = df.loc[:, (df == '-').sum(axis=0) <= threshold]
-
-# Combine each row into a single string for FASTA output
-df2['Sequence'] = df2.apply(lambda row: ''.join(row.astype(str)), axis=1)
-
-# Write the trimmed sequences to FASTA file in one go
-output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Edited_Rlow_consensus_strains_onlyLucy_trimmed.fasta'
-seq_records = [SeqRecord(seq=Seq(row['Sequence']), id=str(index), description='') for index, row in df2.iterrows()]
+# Write the filtered sequences to output FASTA file
+output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_snps_trimmed_nogaps.masked.fasta'
 with open(output_path, 'w') as f:
-    SeqIO.write(seq_records, f, 'fasta')
+    SeqIO.write(filtered_sequences, f, 'fasta')

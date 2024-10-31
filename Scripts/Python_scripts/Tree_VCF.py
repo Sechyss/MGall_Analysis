@@ -5,10 +5,10 @@ import os
 from tqdm import tqdm
 
 os.chdir('/home/albertotr/OneDrive/Data/'
-         'Cambridge_Project/Mapped_output_Rlow/')
+         'Cambridge_Project/Mapped_output_Rlow/Only_SNPs/')
 with open('Rlow_consensus_strains_onlyLucy.fasta', 'a') as handle:
     for file in tqdm(os.listdir('/home/albertotr/OneDrive/Data/'
-                                'Cambridge_Project/Mapped_output_Rlow/')):
+                                'Cambridge_Project/Mapped_output_Rlow/Only_SNPs/')):
         if file.endswith('.bam.fasta'):
             fastafile = SeqIO.parse(file, 'fasta')
             for record in fastafile:

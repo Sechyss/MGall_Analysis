@@ -81,8 +81,7 @@ collection_vcf['Gene_ID'] = collection_vcf['Position'].apply(lambda pos: find_ge
 collection_vcf['Gene_product'] = collection_vcf['Gene_ID'].apply(lambda x: map_values(x, gene_names))
 
 # Filter non-synonymous SNPs
-non_synonymous = collection_vcf[collection_vcf['Effect'].str.contains('STOP') ]# |
-                               # (collection_vcf['Effect'].str.contains('NON_SYNONYMOUS'))]
+non_synonymous = collection_vcf[collection_vcf['Effect'].str.contains('STOP') |(collection_vcf['Effect'].str.contains('NON_SYNONYMOUS'))]
 
 # Define strains
 motility_strains = ['A1', 'F1', 'F4', 'A10', 'E11', 'E12']
