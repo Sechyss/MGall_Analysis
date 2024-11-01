@@ -24,6 +24,3 @@ print(common_elements)
 # Find elements unique to each list
 unique_to_list1 <- setdiff(vec1, vec2)
 unique_to_list2 <- setdiff(vec2, vec1)
-
-print(unique_to_list1)
-print(unique_to_list2)

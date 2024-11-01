@@ -1,4 +1,5 @@
 from Bio import AlignIO
+import pandas as pd
 import numpy as np
 
 # Define paths to alignment files
@@ -22,11 +23,24 @@ def get_segregating_sites(alignment_input):
 segregating_sites_1 = get_segregating_sites(alignment)
 segregating_sites_2 = get_segregating_sites(alignment_lucy)
 
-# Find common and unique elements
-common_elements = np.intersect1d(segregating_sites_1, segregating_sites_2)
-unique_to_list1 = np.setdiff1d(segregating_sites_1, segregating_sites_2)
-unique_to_list2 = np.setdiff1d(segregating_sites_2, segregating_sites_1)
+# Find differing elements (symmetric difference)
+different_sites = np.setxor1d(segregating_sites_1, segregating_sites_2)
 
-print("Common elements:", common_elements)
-print("Unique to list 1:", unique_to_list1)
-print("Unique to list 2:", unique_to_list2)
+# Create a DataFrame for differing sites
+diff_data = []
+for pos in different_sites:
+    nucleotides_1 = set(record.seq[pos] for record in alignment if record.seq[pos] != '-')
+    nucleotides_2 = set(record.seq[pos] for record in alignment_lucy if record.seq[pos] != '-')
+
+    # Skip if either set is empty or if both sets have the same nucleotides
+    if not nucleotides_1 or not nucleotides_2 or nucleotides_1 == nucleotides_2:
+        continue
+
+    # Add to list if nucleotides are different
+    diff_data.append({
+        "Position": pos,
+        "Alignment 1 Nucleotides": ''.join(nucleotides_1),
+        "Alignment 2 Nucleotides": ''.join(nucleotides_2)
+    })
+
+diff_df = pd.DataFrame(diff_data)
