@@ -58,36 +58,35 @@ diff_df = pd.DataFrame(diff_data)
 positions = diff_df["Position"].tolist()
 
 # Directory containing BAM files
-bam_dir = "/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/BAMFiles/"
+bam_dir = "/home/albertotr/downloads/BAM/BAM/"
 
 # Loop through each BAM file and check sequences at differing positions
 for file in os.listdir(bam_dir):
-    if file.endswith(".bam"):
-        bamfile_path = os.path.join(bam_dir, file)
-        bamfile = pysam.AlignmentFile(bamfile_path, "rb")
+    if "A1" in file:
+        if file.endswith(".bam"):
+            bamfile_path = os.path.join(bam_dir, file)
+            bamfile = pysam.AlignmentFile(bamfile_path, "rb")
 
-        # Assuming single chromosome reference; adjust if necessary
-        chromosome = bamfile.references[0]
+            # Assuming single chromosome reference; adjust if necessary
+            chromosome = bamfile.references[0]
 
-        # Store sequences for each position
-        sequences = []
-        for pos in positions:
-            bases = []
-            for pileupcolumn in bamfile.pileup(chromosome, pos, pos + 1, truncate=True):
-                if pileupcolumn.pos == pos:  # BAM is 0-based, so this matches our positions
-                    bases = [
-                        pileupread.alignment.query_sequence[pileupread.query_position]
-                        for pileupread in pileupcolumn.pileups
-                        if pileupread.query_position is not None
-                    ]
-                    break
-            sequences.append(''.join(bases))
+            # Store sequences for each position
+            sequences = []
+            for pos in positions:
+                bases = []
+                for pileupcolumn in bamfile.pileup(chromosome, pos, pos + 1, truncate=True):
+                    if pileupcolumn.pos == pos:  # BAM is 0-based, so this matches our positions
+                        bases = [
+                            pileupread.alignment.query_sequence[pileupread.query_position]
+                            for pileupread in pileupcolumn.pileups
+                            if pileupread.query_position is not None
+                        ]
+                        break
+                sequences.append(''.join(bases))
 
-        # Add sequences as a new column in diff_df
-        bamfile_label = os.path.splitext(file)[0]  # Name column based on BAM filename
-        diff_df[bamfile_label] = sequences
+            # Add sequences as a new column in diff_df
+            bamfile_label = os.path.splitext(file)[0]  # Name column based on BAM filename
+            diff_df[bamfile_label] = sequences
 
-        bamfile.close()
-
-# Display final DataFrame
-print(diff_df)
+            bamfile.close()
+diff_df.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Test.csv', index=False)
