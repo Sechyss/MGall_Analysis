@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="MGall" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="MGall_Analysis" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="phylo_env" project-jdk-type="Python SDK" />
 </project>
