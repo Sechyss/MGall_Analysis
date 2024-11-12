@@ -1,7 +1,8 @@
 from ete3 import Tree, TreeStyle, NodeStyle
 import numpy as np
-from scipy.cluster.hierarchy import fcluster, linkage
+from scipy.cluster.hierarchy import fcluster, linkage, dendrogram
 import random
+import matplotlib.pyplot as plt
 
 # Load the tree
 tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Fasttree_Rlow_snps_Lucy_nogaps.newick')
@@ -28,6 +29,16 @@ condensed_matrix = distance_matrix[np.triu_indices(n, k=1)]
 Z = linkage(condensed_matrix, 'ward')  # You can also use other linkage methods
 threshold = 0.0012
 clusters = fcluster(Z, threshold, criterion="distance")
+
+# Plot the dendrogram with the threshold line
+plt.figure(figsize=(10, 8))
+dendrogram(Z, labels=[leaf.name for leaf in leaves], leaf_rotation=90)
+plt.axhline(y=threshold, color='r', linestyle='--', label=f'Threshold = {threshold}')
+plt.legend()
+plt.title("Hierarchical Clustering Dendrogram")
+plt.xlabel("Leaf Index or Clustered Sample")
+plt.ylabel("Genetic Distance")
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Fasttree_Rlow_snps_Lucy_nogaps_Clustering_dendrogram.pdf')
 
 # Display lineage clusters
 print(f"Estimated lineages (clusters): {np.unique(clusters)}")
