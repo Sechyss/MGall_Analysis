@@ -4,8 +4,7 @@ from scipy.cluster.hierarchy import fcluster, linkage
 import random
 
 # Load the tree
-tree_file = Tree(
-    '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Fasttree_Rlow_snps_Lucy_nogaps.newick')
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Fasttree_Rlow_snps_Lucy_nogaps.newick')
 
 # Get all leaves in the tree
 leaves = tree_file.get_leaves()
@@ -39,27 +38,33 @@ for cluster_id in np.unique(clusters):
     # Assign a random color for each cluster
     cluster_colors[cluster_id] = "#" + ''.join([random.choice('0123456789ABCDEF') for _ in range(6)])
 
-# Apply colors to leaves and branches based on clusters
+# Function to color branches from each leaf up to the common ancestor
+def color_branch_upwards(node, color):
+    # Apply color to the node's branch
+    style = NodeStyle()
+    style["fgcolor"] = color          # Set the font color for the leaf name
+    style["vt_line_color"] = color    # Set the color for the vertical branch
+    style["hz_line_color"] = color    # Set the color for the horizontal branch
+    style["size"] = 0                 # Hide the node circle
+    node.set_style(style)
+
+    # Continue coloring up to the root
+    while node.up:
+        node = node.up
+        node.set_style(style)
+
+# Apply colors to leaves and their branches based on clusters
 for i, leaf in enumerate(leaves):
     cluster_id = clusters[i]
     color = cluster_colors[cluster_id]
-
-    # Create and set NodeStyle for each leaf and its branch
-    style = NodeStyle()
-    style["fgcolor"] = color  # Set the font color for the leaf name
-    style["vt_line_color"] = color  # Set the color for the vertical branch
-    style["hz_line_color"] = color  # Set the color for the horizontal branch
-    style["size"] = 0  # Hide the node circle
-    leaf.set_style(style)
-
+    color_branch_upwards(leaf, color)  # Color the leaf and its ancestors
     print(f"Leaf {leaf.name} is in lineage cluster {cluster_id} with color {color}")
 
 # Define a TreeStyle for display
 tree_style = TreeStyle()
 tree_style.show_leaf_name = True
 tree_style.scale = 20  # Adjust scale for visibility
+tree_style.branch_vertical_margin = 10  # Increase spacing between branches
 
 # Render and save the tree to a PNG file
-tree_file.render(
-    '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Lineage_no_gaps_annotated_tree.png',
-    w=1200, tree_style=tree_style)  # Set width for better resolution
+tree_file.show(tree_style=tree_style)  # Increased width and height for better resolution
