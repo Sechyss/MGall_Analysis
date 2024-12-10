@@ -5,15 +5,15 @@ import os
 from tqdm import tqdm
 
 # Load sequences
-sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_snps_trimmed_nogaps.masked.fasta'
+sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/VA94_consensus_onlyLucy_trimmed_threshold60.fasta'
 alignment = SeqIO.parse(sequences, format="fasta")
 
 #%% Divide into multiple fasta files
 
-path_2_file = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Trimmed_fasta/'
+path_2_file = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/Trimmed_fasta/'
 os.chdir(path_2_file)
 
-with open('List_files_Rlow-Trimmed.txt', 'a') as f:
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/List_files_VA94-Trimmed.txt', 'a') as f:
     for record in tqdm(alignment):
         with open(str(record.id)+'.fasta', 'a') as handle:
             header = record.id

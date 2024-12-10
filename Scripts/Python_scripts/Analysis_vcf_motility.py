@@ -1,5 +1,6 @@
 import os
 
+from tqdm import tqdm
 import pandas as pd
 import pysam
 from BCBio import GFF
@@ -37,7 +38,7 @@ collection_vcf = pd.DataFrame(columns=['Sample', 'Reference', 'Alternative', 'Po
 
 # Process VCF files
 os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/snpEff_results_virginia/')
-for file in os.listdir():
+for file in tqdm(os.listdir()):
     if file.endswith('.vcf'):
         vcf_reader = pysam.VariantFile(file, 'r')
         filename = str(file).replace('.bam.vcf.gz.vcf', '')

@@ -2,6 +2,7 @@ from Bio import AlignIO, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from tqdm import tqdm
+import pandas as pd
 
 # Load sequences
 sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_spns.masked.aln'
@@ -9,10 +10,21 @@ alignment = AlignIO.read(sequences, format="fasta")
 
 # Identify columns with no gaps in any sequence
 alignment_length = alignment.get_alignment_length()
-columns_to_keep = [
-    i for i in range(alignment_length)
-    if all(record.seq[i] != '-' for record in alignment)
-]
+columns_to_keep = []
+removed_columns_data = []
+
+for i in range(alignment_length):
+    column_nucleotides = [record.seq[i] for record in alignment]
+    if all(nuc != '-' for nuc in column_nucleotides):
+        columns_to_keep.append(i)
+    else:
+        removed_columns_data.append({
+            'Column_Position': i,
+            'Nucleotides': ''.join(column_nucleotides)
+        })
+
+# Convert removed columns to a Pandas DataFrame
+removed_columns_df = pd.DataFrame(removed_columns_data)
 
 # Extract sequences based on gap-free columns
 filtered_sequences = []
@@ -24,3 +36,7 @@ for record in tqdm(alignment):
 output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_snps_trimmed_nogaps.masked.fasta'
 with open(output_path, 'w') as f:
     SeqIO.write(filtered_sequences, f, 'fasta')
+
+# Write the removed columns DataFrame to a CSV file
+csv_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/removed_columns.csv'
+removed_columns_df.to_csv(csv_path, index=False)
