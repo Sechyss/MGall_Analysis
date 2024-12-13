@@ -13,7 +13,7 @@ collector_dict = {}
 gene_names = {}
 
 # Parse the GFF file to populate dictionaries
-for record in GFF.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCF_000286675.1/genomic.gff'):
+for record in GFF.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCA_000286675.1/genomic.gff'):
     for genes in record.features:
         if genes.id == '':
             continue
