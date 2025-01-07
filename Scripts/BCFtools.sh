@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cd ~/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/ || exit
+cd ~/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/ || exit
 
-for file in ~/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/BAMFiles/*bam; do
+for file in ~/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BAMFiles/*bam; do
   # Extract the filename from the full path
   filename=$(basename "$file")
   if [ -e "$filename".fasta ]; then
@@ -15,4 +15,3 @@ for file in ~/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/BAMFi
   bcftools index --threads 20 "$filename".vcf.gz
   bcftools consensus -a - --mark-snv lc -f ~/OneDrive/Data/Cambridge_Project/CheckMbins/VA94_7994_1_7P.fna "$filename".vcf.gz -o "$filename".fasta
 done
-
