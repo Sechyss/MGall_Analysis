@@ -50,3 +50,8 @@ venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangeno
 fastafile_creation('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/Different_lineages_VA94_Genes_snps.faa',
 unique_genes_lineage2,
 '/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCF_000286675.1/genomic.gbff')
+
+#%% Lineages Rlow
+
+dictionary_file_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold/lineage_dict.pickle'
+lineage_Rlow_dict = pickle.load(open(dictionary_file_path, 'rb'))

@@ -83,9 +83,9 @@ filtered_genes_early_HF, filtered_genes_poultry = filter_presence_absence(Presen
 
 #%% Analysis presence/absence
 
-lineages_table = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold_VA94/'
-                             'mgall_60threshold_VA94_lineages.csv')
-lineages= dict(zip(lineages_table['id'], lineages_table['Rank_5_Lineage']))
+lineages_table = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold/'
+                             'mgall_60threshold_lineages.csv')
+lineages= dict(zip(lineages_table['id'], lineages_table['Rank_2_Lineage']))
 lineages_dict = {key.split('_')[0]: value for key, value in lineages.items()}
 
 key_data = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx',
@@ -100,7 +100,7 @@ for keys in translation_dict.keys():
         translated_dict[newkey].append(translation_dict[keys].replace('Sample_', ''))
 
 
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold_VA94/lineage_dict.pickle', 'wb') as handle:
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold/lineage_dict.pickle', 'wb') as handle:
     pickle.dump(translated_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 lineage1 = set(translated_dict[1])

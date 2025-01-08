@@ -2,22 +2,22 @@ import os
 import pandas as pd
 
 # Define a dictionary with the replacements
-dataset_keys = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx', sheet_name='Lucy_keys')
+dataset_keys = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx', sheet_name='SRA_keys')
 
 replacements = {}
 for index, row in dataset_keys.iterrows():
     oldname = str(row['trelabels']).replace('Sample_', '')
-    amendment = str(row['Lnames']) + '_' + str(row['year.sampling'])
+    amendment = str(row['Lnames']) + '_' + str(row['year.sampling']).replace(' ', '_')
     replacements.update({oldname: amendment})
 
 sorted_replacements = dict(sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True))
 
 # Change directory to where the .contree files are located
-os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/Consensus_fasta/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/FASTA_files/OnlyHF')
 
-# Iterate over all files ending with .contree in the directory
+# Iterate over all files ending with 'SRA.fasta'
 for filename in os.listdir():
-    if filename.endswith('onlyLucy.fasta'):
+    if filename.endswith('SRA.fasta'):
         # Construct the new filename with 'Edited_' prefix
         new_filename = 'Edited_' + filename
 

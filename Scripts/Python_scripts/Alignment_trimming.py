@@ -5,7 +5,7 @@ from tqdm import tqdm
 import pandas as pd
 
 # Load sequences
-sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_spns.masked.aln'
+sequences ='/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_all_gubbins_run.masked.aln'
 alignment = AlignIO.read(sequences, format="fasta")
 
 # Identify columns with no gaps in any sequence
@@ -33,10 +33,10 @@ for record in tqdm(alignment):
     filtered_sequences.append(SeqRecord(Seq(filtered_seq), id=record.id, description=''))
 
 # Write the filtered sequences to output FASTA file
-output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_snps_trimmed_nogaps.masked.fasta'
+output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_trimmed_nogaps.masked.fasta'
 with open(output_path, 'w') as f:
     SeqIO.write(filtered_sequences, f, 'fasta')
 
 # Write the removed columns DataFrame to a CSV file
-csv_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/removed_columns.csv'
+csv_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/removed_columns.csv'
 removed_columns_df.to_csv(csv_path, index=False)

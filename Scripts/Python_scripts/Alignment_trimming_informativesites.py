@@ -34,7 +34,7 @@ def find_parsimony_informative_sites(alignment_file, format_file="fasta"):
     return informative_sites
 
 
-sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_spns.masked.aln'
+sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_all_gubbins_run.masked.aln'
 informative_sites_bp = find_parsimony_informative_sites(sequences)
 print(f"Parsimony-informative sites: {informative_sites_bp}")
 
@@ -95,5 +95,5 @@ def filter_columns_by_informative_sites(alignment_file, output_file, informative
 
 
 # Example usage
-output_alignment = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Rlow_consensus_spns_trimmed_informative_sites.masked.aln'
+output_alignment = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_trimmed_informative_sites.masked.aln'
 filter_columns_by_informative_sites(sequences, output_alignment, informative_sites_bp)

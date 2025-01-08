@@ -5,11 +5,11 @@ from tqdm import tqdm
 import pandas as pd
 
 # Load sequences
-sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/VA94_consensus_spns.masked.aln'
+sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_all_gubbins_run.masked.aln'
 alignment = AlignIO.read(sequences, format="fasta")
 
 # Set the minimum percentage of non-gap characters to keep a column
-non_gap_threshold = 0.6  # Adjust this value as needed
+non_gap_threshold = 0.8  # Adjust this value as needed
 
 # Calculate the minimum number of sequences without gaps required for each column
 min_non_gap_count = int(len(alignment) * non_gap_threshold)
@@ -42,12 +42,12 @@ for record in tqdm(alignment):
     filtered_sequences.append(SeqRecord(Seq(filtered_seq), id=record.id, description=''))
 
 # Write the filtered sequences to output FASTA file
-output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/VA94_consensus_onlyLucy_trimmed_threshold60.fasta'
+output_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_80thres.fasta'
 with open(output_path, 'w') as f:
     SeqIO.write(filtered_sequences, f, 'fasta')
 
 # Write the removed columns DataFrame to a CSV file
-csv_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/removed_columns_threshold60.csv'
+csv_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/removed_columns_80thres.csv'
 removed_columns_df.to_csv(csv_path, index=False)
 
 print(f"Filtered sequences written to {output_path}")

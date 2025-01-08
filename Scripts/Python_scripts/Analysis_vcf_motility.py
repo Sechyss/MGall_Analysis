@@ -29,9 +29,7 @@ for record in GFF.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/d
                 continue
 
 # Remove irrelevant entries
-collector_dict.pop('NC_018406.1:1..964110', None)
-collector_dict.pop('id-NC_018406.1:317779..317884', None)
-collector_dict.pop('id-NC_018406.1:888405..890816', None)
+collector_dict_filtered = {key: value for key, value in collector_dict.items() if 'CP003506.1' not in key}
 
 # Initialize DataFrame to collect VCF data
 collection_vcf = pd.DataFrame(columns=['Sample', 'Reference', 'Alternative', 'Position', 'Effect'])
@@ -78,11 +76,11 @@ def map_values(value, mapping):
     return mapping.get(value, value)
 
 # Apply the function to add the 'Gene_ID' column
-collection_vcf['Gene_ID'] = collection_vcf['Position'].apply(lambda pos: find_gene_id(pos, collector_dict))
+collection_vcf['Gene_ID'] = collection_vcf['Position'].apply(lambda pos: find_gene_id(pos, collector_dict_filtered))
 collection_vcf['Gene_product'] = collection_vcf['Gene_ID'].apply(lambda x: map_values(x, gene_names))
 
 # Filter non-synonymous SNPs
-non_synonymous = collection_vcf[collection_vcf['Effect'].str.contains('STOP') |(collection_vcf['Effect'].str.contains('NON_SYNONYMOUS'))]
+non_synonymous = collection_vcf[collection_vcf['Effect'].str.contains('STOP') |(collection_vcf['Effect'].str.contains('NON_SYNONYMOUS')) | (collection_vcf['Effect'].str.contains('LOST'))]
 
 # Define strains
 motility_strains = ['A1', 'F1', 'F4', 'A10', 'E11', 'E12']
@@ -109,7 +107,7 @@ list_genes_non_motility = list(sorted(set(filtered_df['Gene_ID'])))
 
 # %% Creation of fasta file of genes of interest.
 with open('Non_motile_variant_proteins_stop_codon.fasta', 'a') as handle:
-    for genome in SeqIO.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCF_000286675.1/genomic.gbff', 'genbank'):
+    for genome in SeqIO.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCA_000286675.1/genomic.gbff', 'genbank'):
         for feature in genome.features:
             if feature.type == "CDS":  # Find CDS to collect the information
                 locustag = str(feature.qualifiers["locus_tag"][0]).replace(' ', '_')

@@ -25,10 +25,18 @@ positions_to_keep = set()
 for start, end in collector_dict_filtered.values():
     positions_to_keep.update(range(start, end + 1))
 
-# Create a new alignment with only the columns within the gene regions
+# Identify columns with no gaps in any sequence
+alignment_length = alignment.get_alignment_length()
+columns_to_keep = []
+for i in range(alignment_length):
+    column_nucleotides = [record.seq[i] for record in alignment]
+    if any(nuc != '-' for nuc in column_nucleotides):
+        columns_to_keep.append(i)
+
+# Create a new alignment with only the columns within the gene regions and no gap-only columns
 trimmed_records = []
 for record in alignment:
-    trimmed_seq = ''.join([record.seq[i] for i in range(len(record.seq)) if i + 1 in positions_to_keep])
+    trimmed_seq = ''.join([record.seq[i] for i in columns_to_keep if i + 1 in positions_to_keep])
     trimmed_records.append(record[:0])  # Copy the record structure
     trimmed_records[-1].seq = Seq(trimmed_seq)
 
