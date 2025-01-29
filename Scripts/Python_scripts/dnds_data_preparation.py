@@ -18,7 +18,9 @@ for record in GFF.parse('/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/d
 collector_dict_filtered = {key: value for key, value in collector_dict.items() if 'CP003506.1' not in key}
 
 # Read the alignment
-alignment = AlignIO.read('/home/albertotr/OneDrive/Data/Cambridge_project/Mapped_output_VA94_7994_1_7P/VA94_consensus_spns.masked.aln', 'fasta')
+alignment = AlignIO.read(
+    '/home/albertotr/OneDrive/Data/Cambridge_project/Mapped_output_VA94_7994_1_7P/VA94_consensus_spns.masked.aln',
+    'fasta')
 
 # Flatten gene ranges into a single list of positions to keep
 positions_to_keep = set()
@@ -48,7 +50,7 @@ trimmed_alignment = Align.MultipleSeqAlignment(trimmed_records)
 output_path = '/home/albertotr/OneDrive/Data/Cambridge_project/Mapped_output_VA94_7994_1_7P/dnds/VA94_test.masked.aln'
 AlignIO.write(trimmed_alignment, output_path, 'fasta')
 
-#%% Create individual alignments for each gene
+# %% Create individual alignments for each gene
 # Loop through each gene in the filtered collector dictionary
 for gene_id, (start, end) in collector_dict_filtered.items():
     # Create a range of positions for the current gene
@@ -78,7 +80,7 @@ for gene_id, (start, end) in collector_dict_filtered.items():
         protein_record = record.__class__(record.id, protein_seq, record.description)  # Copy the record structure
         protein_record.seq = protein_seq
         protein_records.append(protein_record)
-    
+
     # Create a new alignment object for the translated proteins
     protein_alignment = Align.MultipleSeqAlignment(protein_records)
     # Define the output path for the protein-specific alignment file
