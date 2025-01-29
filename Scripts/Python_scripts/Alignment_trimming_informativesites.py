@@ -64,8 +64,7 @@ def calculate_column_variability(alignment_file, format_file="fasta"):
 # Example usage
 variability_scores = calculate_column_variability(sequences)
 
-
-#%%
+# Filter columns based on variability
 
 def filter_columns_by_informative_sites(alignment_file, output_file, informative_sites, format_file="fasta"):
     """
@@ -95,5 +94,5 @@ def filter_columns_by_informative_sites(alignment_file, output_file, informative
 
 
 # Example usage
-output_alignment = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_trimmed_informative_sites.masked.aln'
+output_alignment = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_trimmed_informative_sites.fasta'
 filter_columns_by_informative_sites(sequences, output_alignment, informative_sites_bp)

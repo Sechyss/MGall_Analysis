@@ -1,8 +1,9 @@
 import os
 import pandas as pd
+import pickle
 
 # Define a dictionary with the replacements
-dataset_keys = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx', sheet_name='SRA_keys')
+dataset_keys = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx', sheet_name='Lucy_keys')
 
 replacements = {}
 for index, row in dataset_keys.iterrows():
@@ -11,6 +12,9 @@ for index, row in dataset_keys.iterrows():
     replacements.update({oldname: amendment})
 
 sorted_replacements = dict(sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True))
+
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'wb') as handle:
+    pickle.dump(sorted_replacements, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 # Change directory to where the .contree files are located
 os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/FASTA_files/OnlyHF')

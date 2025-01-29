@@ -35,7 +35,7 @@ collector_dict_filtered = {key: value for key, value in collector_dict.items() i
 collection_vcf = pd.DataFrame(columns=['Sample', 'Reference', 'Alternative', 'Position', 'Effect'])
 
 # Process VCF files
-os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/snpEff_results_virginia/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/SnpEff_results_virginia/')
 for file in tqdm(os.listdir()):
     if file.endswith('.vcf'):
         vcf_reader = pysam.VariantFile(file, 'r')
@@ -82,7 +82,7 @@ collection_vcf['Gene_product'] = collection_vcf['Gene_ID'].apply(lambda x: map_v
 # Filter non-synonymous SNPs
 non_synonymous = collection_vcf[collection_vcf['Effect'].str.contains('STOP') |(collection_vcf['Effect'].str.contains('NON_SYNONYMOUS')) | (collection_vcf['Effect'].str.contains('LOST'))]
 
-# Define strains
+#%% Define strains
 motility_strains = ['A1', 'F1', 'F4', 'A10', 'E11', 'E12']
 non_motility_strains = ['B2', 'A9', 'D8', 'C3', 'B8']
 
