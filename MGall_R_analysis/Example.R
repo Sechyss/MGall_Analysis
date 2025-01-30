@@ -1,19 +1,3 @@
----
-title: "Birth Death Skyline post-processing"
-author: "Louis du Plessis"
-date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
-output: html_document
-params:
-  logfile: "C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/Test_data/hcv_coal.log"
-  logfile_long: "../precooked_runs/hcv_bdsky_30M.log"
-  gridsize: 100
-  mostrecent: 1993
----
-  
-  This notebook steps through the post-processing of `hcv_bdsky.xml`, the analysis of the Egyptian HCV data with a Birth Death Skyline Contemporary model.
-
-
-```{r install-packages, eval=FALSE, echo=FALSE} 
 # Install the required packages by evaluating this chunk
 # (only needs to be evaluated the first time)
 
@@ -22,11 +6,6 @@ install.packages("coda")
 install.packages("RColorBrewer")
 devtools::install_github("laduplessis/bdskytools")
 devtools::install_github("laduplessis/beastio")
-
-```
-
-
-```{r setup, include=FALSE}
 
 # Load the required packages and set global options 
 library(coda)
@@ -42,72 +21,43 @@ cols  <- list(blue   = RColorBrewer::brewer.pal(12,"Paired")[2],
 
 set_alpha <- function(c, alpha=1.0) paste0(c,format(as.hexmode(round(alpha*255)), width=2))
 
-```
+
 
 # Load the trace file and check convergence
 
-We can load the log file using the `readLog()` function. 
+bdsky_trace   <- beastio::readLog("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60_threshold_skyline_birthdeath.log", burnin=0.1)
 
-```{r load-data}
-bdsky_trace   <- beastio::readLog("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/Test_data/hcv_coal.log", burnin=0.1)
-```
-
-With the log file loaded as a `coda::mcmc` object we can use functions from 
-the `coda` package to explore the trace. (see the `coda` [manual](https://cran.r-project.org/web/packages/coda/index.html) for more examples) 
-
-```{r, eval=FALSE}
 summary(bdsky_trace)
 varnames(bdsky_trace)
-```
 
-We can use the `checkESS()` function to find which parameters have ESS < 200,
 
-```{r check-convergence}
+# We can use the `checkESS()` function to find which parameters have ESS < 200,
+
 beastio::checkESS(bdsky_trace)
-```
 
-or use the same function to plot the ESS values of all parameters.
 
-```{r plot-ESS, results='hide'}
+# or use the same function to plot the ESS values of all parameters.
+
+
 beastio::checkESS(bdsky_trace,   cutoff=200, plot=TRUE, log='y', ylim=c(1,10000), title="All parameters", plot.grid=TRUE)
-```
 
-We see that most parameters have very low ESS values, because we didn't run the chain long enough. We can also investigate the ESS values of the analysis we ran for 30 million steps, where most parameters should have an ESS > 200:
-
-```{r ESS-bdsky-long}
-    bdsky_trace_long   <- beastio::readLog(params$logfile_long, burnin=0.1)
-    
-    beastio::checkESS(bdsky_trace_long,   cutoff=200, plot=TRUE, log='y', ylim=c(1,10000), title="All parameters", plot.grid=TRUE)
-
-
-```
 
 # Extract parameter estimates and HPDs
 
-Next we can extract the $R_e$ parameter values and their HPDs. 
+# Next we can extract the $R_e$ parameter values and their HPDs. 
 
-```{r extract-Re}
-  Re_sky <- beastio::getLogFileSubset(bdsky_trace, "reproductiveNumber_BDSKY_Contemp")
-  Re_hpd <- t(beastio::getHPDMedian(Re_sky))
-  
-  delta_hpd <- beastio::getHPDMedian(bdsky_trace[, "becomeUninfectiousRate_BDSKY_Contemp"])
-```
+Re_sky <- beastio::getLogFileSubset(bdsky_trace, "BDSKY_Serial")
+Re_hpd <- t(beastio::getHPDMedian(Re_sky))
+
+delta_hpd <- beastio::getHPDMedian(bdsky_trace[, "becomeUninfectiousRate_BDSKY_Serial"])
+ 
 
 
 # Plotting non-gridded BDSKY estimates
-We can plot the raw $R_e$ HPD intervals. This is equivalent to the output in Tracer.
+#We can plot the raw $R_e$ HPD intervals. This is equivalent to the output in Tracer.
 
-```{r plot-Re-ungridded}
-    bdskytools::plotSkyline(1:10, Re_hpd, type='step', ylab="Re")
-```
 
-Since the intervals in this analysis are equidistant between the origin and the present 
-and the origin was also estimated, they should probably not be plotted in this way. 
-Use this only when the interval times in bdsky are fixed (requires editing the XML)
-or when the origin is fixed (automatically fixes the shift-times).
-
-When doing this do NOT plot with type='smooth' as it gives a misleading result!!!
-
+bdskytools::plotSkyline(1:10, Re_hpd, type='step', ylab="Re")
 
 
 # Plotting a "smooth" skyline
@@ -127,14 +77,14 @@ The times to grid the skyline on (`gridTimes`), refers to years in the past.
     tmrca_med  <- median(bdsky_trace[, "Tree.height"])
     gridTimes  <- seq(0, median(tmrca_med), length.out=100)  
     
-    Re_gridded <- mcmc(bdskytools::gridSkyline(Re_sky, bdsky_trace[, "origin_BDSKY_Contemp"], gridTimes))
+    Re_gridded <- mcmc(bdskytools::gridSkyline(Re_sky, bdsky_trace[, "origin_BDSKY_Serial"], gridTimes))
     Re_gridded_hpd <- t(getHPDMedian(Re_gridded))
 ```
 
 Now we are ready to plot the smooth skyline.
 
 ```{r plot-Re}
-    times <- 1993 - gridTimes
+    times <- 2015 - gridTimes
     plotSkyline(times, Re_gridded_hpd, xlab="Date", ylab="Re", type="smooth")   
     plotSkyline(times, Re_gridded_hpd, xlab="Date", ylab="Re", type="lines")   
 ```

@@ -1,3 +1,4 @@
+#%% Import necessary libraries and collection of the data
 from BCBio import GFF
 from Bio import AlignIO, Align
 from Bio.Seq import Seq
@@ -22,7 +23,7 @@ alignment = AlignIO.read(
     '/home/albertotr/OneDrive/Data/Cambridge_project/Mapped_output_VA94_7994_1_7P/VA94_consensus_spns.masked.aln',
     'fasta')
 
-# Flatten gene ranges into a single list of positions to keep
+#%% Flatten gene ranges into a single list of positions to keep
 positions_to_keep = set()
 for start, end in collector_dict_filtered.values():
     positions_to_keep.update(range(start, end + 1))
