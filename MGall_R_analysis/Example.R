@@ -13,6 +13,7 @@ library(bdskytools)
 library(beastio)
 library(RColorBrewer)
 
+setwd("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat")
 knitr::opts_chunk$set(echo = TRUE, fig.path="figs/", dev='png', fig.width=7, fig.height=5)
 
 # Set up some colours
@@ -25,7 +26,7 @@ set_alpha <- function(c, alpha=1.0) paste0(c,format(as.hexmode(round(alpha*255))
 
 # Load the trace file and check convergence
 
-bdsky_trace   <- beastio::readLog("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60_threshold_skyline_birthdeath.log", burnin=0.1)
+bdsky_trace   <- beastio::readLog("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60_threshold_birthdeath.log", burnin=0.1)
 
 summary(bdsky_trace)
 varnames(bdsky_trace)
@@ -48,7 +49,6 @@ beastio::checkESS(bdsky_trace,   cutoff=200, plot=TRUE, log='y', ylim=c(1,10000)
 
 Re_sky <- beastio::getLogFileSubset(bdsky_trace, "BDSKY_Serial")
 Re_hpd <- t(beastio::getHPDMedian(Re_sky))
-
 delta_hpd <- beastio::getHPDMedian(bdsky_trace[, "becomeUninfectiousRate_BDSKY_Serial"])
  
 
@@ -57,46 +57,22 @@ delta_hpd <- beastio::getHPDMedian(bdsky_trace[, "becomeUninfectiousRate_BDSKY_S
 #We can plot the raw $R_e$ HPD intervals. This is equivalent to the output in Tracer.
 
 
-bdskytools::plotSkyline(1:10, Re_hpd, type='step', ylab="Re")
+bdskytools::plotSkyline(1:14, Re_hpd, type='step', ylab="Re")
 
 
 # Plotting a "smooth" skyline
 
-In order to plot the smooth skyline we have to marginalize our
-$R_e$ estimates on a regular time grid and calculate the
-HPD at each grid point. It is usually a good idea to use a grid with more
-cells than the dimension of $R_e$ (but using too many can result in noisy estimates). 
 
-To do this we first calculate the marginal posterior at every time of interest using the
-function `bdskytools::gridSkyline()` and then calculate the HPD for each of
-the finer time intervals. Here we choose to look at `params$gridsize` equidistantly spaced 
-points between the median tMRCA and the most recent sequence (`params$mostrecent`). 
-The times to grid the skyline on (`gridTimes`), refers to years in the past. 
+tmrca_med  <- median(bdsky_trace[, "Tree.height"])
+gridTimes  <- seq(0, median(tmrca_med), length.out=100)  
 
-```{r grid-Re}
-    tmrca_med  <- median(bdsky_trace[, "Tree.height"])
-    gridTimes  <- seq(0, median(tmrca_med), length.out=100)  
-    
-    Re_gridded <- mcmc(bdskytools::gridSkyline(Re_sky, bdsky_trace[, "origin_BDSKY_Serial"], gridTimes))
-    Re_gridded_hpd <- t(getHPDMedian(Re_gridded))
-```
+Re_gridded <- mcmc(bdskytools::gridSkyline(Re_sky, bdsky_trace[, "origin_BDSKY_Serial"], gridTimes))
+Re_gridded_hpd <- t(getHPDMedian(Re_gridded))
 
-Now we are ready to plot the smooth skyline.
+times <- 2015 - gridTimes
+plotSkyline(times, Re_gridded_hpd, xlab="Date", ylab="Re", type="smooth")
+# Plotting multiple samples
 
-```{r plot-Re}
-    times <- 2015 - gridTimes
-    plotSkyline(times, Re_gridded_hpd, xlab="Date", ylab="Re", type="smooth")   
-    plotSkyline(times, Re_gridded_hpd, xlab="Date", ylab="Re", type="lines")   
-```
-
-We can plot the gridded $R_e$ skyline (not its HPDs) for a
-few of the states in our MCMC chain to see what it really looks like as the Markov
-chain samples parameters. Note that the intervals overlap between
-different posterior samples. This is because the origin estimate is a different sample from the origin's 
-posterior density in each of the plotted samples. As we add more samples to the plot we start
-to see the smooth skyline appear.
-
-```{r plot-Re-traces, fig.height=10}
 layout(matrix(c(1:4), nrow=4))
 plotSkyline(times, Re_gridded, type='steplines', traces=1, 
             col=cols$blue,ylims=c(0,3.5), xlab="Time", ylab="Re", main="1 random sample")
@@ -107,18 +83,9 @@ plotSkyline(times, Re_gridded, type='steplines', traces=100,
 plotSkyline(times, Re_gridded, type='steplines', traces=1000, 
             col=set_alpha(cols$blue,0.1),ylims=c(0,3.5), xlab="Time", ylab="Re", main="1000 random samples")
 
-```
-
-
 # Combined plot
-
-Finally, we can plot both Re and delta on one set of axes for comparison. In this analysis delta has a dimension of 1, so the skyline is not really insightful. We can also use this type of plot to compare skylines of the same parameter between different models (eg. changing the priors or number of shifts).
-
-
-```{r combined}
-
 par(mar=c(4,4,1,4))
-plot(1, type='n', xlim=c(1700,2000), ylim=c(0,1), 
+plot(1, type='n', xlim=c(1990,2015), ylim=c(0,1), 
      xlab='Year', ylab="", yaxt='n', xaxs='i', yaxs='i')
 
 plotSkyline(range(times), as.matrix(delta_hpd), type='step', lwd=2, 
@@ -126,7 +93,7 @@ plotSkyline(range(times), as.matrix(delta_hpd), type='step', lwd=2,
 axis(4, las=1)
 mtext(expression(delta), side=4, line=3)
 
-plotSkyline(times, Re_gridded_hpd, lwd=2, xlims=c(1700,2000), xaxs='i', yaxs='i', 
+plotSkyline(times, Re_gridded_hpd, lwd=2, xlims=c(1990,2015), xaxs='i', yaxs='i', 
             xlab="", ylab="", add=TRUE, new=TRUE, axes=FALSE, fill=set_alpha(cols$orange, 0.5), col=cols$orange)   
 axis(2, las=1)
 mtext(expression("R"[e]), side=2, line=3)
@@ -135,7 +102,3 @@ abline(h = 1, lty=2, col=cols$red, lwd=2)
 
 legend("topright", legend=c(expression("R"[e]), expression(delta)), bty='n',
        fill=set_alpha(c(cols$orange, cols$blue), 0.5), border=c(cols$orange, cols$blue))
-
-
-
-```
