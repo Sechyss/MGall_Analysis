@@ -7,14 +7,15 @@ install.packages("RColorBrewer")
 devtools::install_github("laduplessis/bdskytools")
 devtools::install_github("laduplessis/beastio")
 
-# Load the required packages and set global options 
+# Load the required packages and set global options
 library(coda)
 library(bdskytools)
 library(beastio)
 library(RColorBrewer)
 
 setwd("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat")
-knitr::opts_chunk$set(echo = TRUE, fig.path="figs/", dev='png', fig.width=7, fig.height=5)
+knitr::opts_chunk$set(echo = TRUE, fig.path = "figs/",
+                      dev = "png", fig.width = 7, fig.height = 5)
 
 # Set up some colours
 cols  <- list(blue   = RColorBrewer::brewer.pal(12,"Paired")[2], 
