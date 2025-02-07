@@ -3,26 +3,29 @@ import pickle
 import pandas as pd
 import math
 
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from venny4py.venny4py import *
+from ete3 import Tree
 
 
-#%% Load the data and the lineages
-snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
-snps_sra = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/All_mutation_matrix.xlsx', index_col=0, sheet_name='Sheet1', engine='openpyxl')
 
-lucy_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb'))
-sra_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/SRA_replacements.pickle', 'rb'))
+def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
+    dataframe_group1 = [col for col in dataframe.columns if col in group1]
+    dataframe_group2 = [col for col in dataframe.columns if col in group2]
 
-snps_lucy['Sample'] = snps_lucy['Sample'].replace(lucy_replacement)
-snps_sra['Sample'] = snps_sra['Sample'].replace(sra_replacement)
+    # Calculate the presence ratio for house finch and poultry
+    presence_group1 = dataframe[dataframe_group1].notna().mean(axis=1)
+    presence_group2 = dataframe[dataframe_group2].notna().mean(axis=1)
 
-all_snps = pd.concat([snps_lucy, snps_sra], axis=0)
+    # Filter genes present in at least 90% of house finch samples and less than 10% of poultry samples
+    filtered_genes_group1 = dataframe[
+        (presence_group1 >= filter1) & (presence_group2 <= filter2)]
+    filtered_genes_group2 = dataframe[
+        (presence_group1 <= filter2) & (presence_group2 >= filter1)]
+    return filtered_genes_group1, filtered_genes_group2
 
-non_synonymous = all_snps[all_snps['Effect'].str.contains('STOP') |(all_snps['Effect'].str.contains('NON_SYNONYMOUS')) | (all_snps['Effect'].str.contains('LOST'))]
 
+
+#%% Create the lineages
 
 lineage2 = ['S11_1994',
 'A090809_2009',
@@ -87,7 +90,26 @@ lineage2 = ['S11_1994',
 'A018_2011',
 'MG30_AL_11_2011']
 
-lineage_1_snps = all_snps[~all_snps['Sample'].isin(lineage2)]
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/VA94_consensus_all_60thres.finaltree.nwk')
+leaves = tree_file.get_leaves()
+
+lineage1 = [leaf.name for leaf in leaves if leaf.name not in lineage2]
+
+#%% Load the data and the lineages
+snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
+snps_sra = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/All_mutation_matrix.xlsx', index_col=0, sheet_name='Sheet1', engine='openpyxl')
+
+lucy_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb'))
+sra_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/SRA_replacements.pickle', 'rb'))
+
+snps_lucy['Sample'] = snps_lucy['Sample'].replace(lucy_replacement)
+snps_sra['Sample'] = snps_sra['Sample'].replace(sra_replacement)
+
+all_snps = pd.concat([snps_lucy, snps_sra], axis=0)
+
+non_synonymous = all_snps[all_snps['Effect'].str.contains('STOP') |(all_snps['Effect'].str.contains('NON_SYNONYMOUS')) | (all_snps['Effect'].str.contains('LOST'))]
+
+lineage_1_snps = all_snps[all_snps['Sample'].isin(lineage1)]
 lineage_2_snps = all_snps[all_snps['Sample'].isin(lineage2)]
 
 unique_to_lineage1 = lineage_1_snps[~lineage_1_snps['Position'].isin(lineage_2_snps['Position'])]
@@ -99,7 +121,7 @@ genes_affected_l2 = set(lineage_2_snps['Gene_ID'].to_list())
 unique_genes_lineage2 = genes_affected_l2.difference(genes_affected_l1)
 filtered_df = lineage_2_snps[lineage_2_snps['Gene_ID'].isin(unique_genes_lineage2)]
 
-#%% Figures
+#%% Venn diagram to show overlapping snps between lineages
 
 sets = {
     'Lineage1_genes': {x for x in genes_affected_l1 if not (isinstance(x, float) and math.isnan(x))},
@@ -109,3 +131,17 @@ sets = {
 venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png',dpi=600)
 
 #%% Compare presence-absence of genes from the pangenome
+
+Presence_absence = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/'
+                               'pangenome_results_filtered/gene_presence_absence.csv')
+
+Presence_absence.columns = Presence_absence.columns.to_series().replace(lucy_replacement)
+
+Presence_absence.columns = Presence_absence.columns.to_series().replace(sra_replacement)
+
+Presence_absence = Presence_absence.set_index('Gene')
+gene_annotation_dict = Presence_absence['Annotation'].to_dict()
+
+
+
+# %%
