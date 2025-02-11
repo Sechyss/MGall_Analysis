@@ -9,6 +9,8 @@ import seaborn as sns
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from ete3 import Tree
+
 
 #%%
 os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/Snp_differences_lineages/')
@@ -93,7 +95,13 @@ lineage2 = ['S11_1994',
 'MG30_AL_11_2011'
             ]
 
-lineage_1_snps = non_synonymous[~non_synonymous['Sample'].isin(lineage2)]
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/VA94_consensus_all_60thres.finaltree.nwk')
+leaves = tree_file.get_leaves()
+
+lineage1 = [leaf.name for leaf in leaves if leaf.name not in lineage2]
+
+
+lineage_1_snps = non_synonymous[non_synonymous['Sample'].isin(lineage1)]
 lineage_2_snps = non_synonymous[non_synonymous['Sample'].isin(lineage2)]
 
 unique_to_lineage1 = lineage_1_snps[~lineage_1_snps['Position'].isin(lineage_2_snps['Position'])]
@@ -117,8 +125,8 @@ def fastafile_creation(fasta_file, list_genes, reference_file):
 genes_affected_l1 = set(lineage_1_snps['Gene_ID'].to_list())
 genes_affected_l2 = set(lineage_2_snps['Gene_ID'].to_list())
 
-fastafile_creation('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/Different_lineages_VA94_Genes_snps_l2.faa',
-genes_affected_l2, '/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCA_000286675.1/genomic.gbff')
+fastafile_creation('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/Different_lineages_VA94_Genes_snps_l1.faa',
+genes_affected_l1, '/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCA_000286675.1/genomic.gbff')
 
 #%% COG analysis
 

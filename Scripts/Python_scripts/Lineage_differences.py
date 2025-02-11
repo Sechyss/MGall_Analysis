@@ -12,15 +12,15 @@ def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
     dataframe_group1 = [col for col in dataframe.columns if col in group1]
     dataframe_group2 = [col for col in dataframe.columns if col in group2]
 
-    # Calculate the presence ratio for house finch and poultry
+    # Calculate the presence ratio for group1 and group2
     presence_group1 = dataframe[dataframe_group1].notna().mean(axis=1)
     presence_group2 = dataframe[dataframe_group2].notna().mean(axis=1)
 
-    # Filter genes present in at least 90% of house finch samples and less than 10% of poultry samples
+    # Filter genes present in at least filter1 threshold of group1 samples and less than filter2 threshold of group2 samples
     filtered_genes_group1 = dataframe[
-        (presence_group1 >= filter1) & (presence_group2 <= filter2)]
+        (presence_group1 >= filter1) & (presence_group2 < filter2)]
     filtered_genes_group2 = dataframe[
-        (presence_group1 <= filter2) & (presence_group2 >= filter1)]
+        (presence_group1 < filter2) & (presence_group2 >= filter1)]
     return filtered_genes_group1, filtered_genes_group2
 
 
@@ -139,9 +139,6 @@ Presence_absence.columns = Presence_absence.columns.to_series().replace(lucy_rep
 
 Presence_absence.columns = Presence_absence.columns.to_series().replace(sra_replacement)
 
-Presence_absence = Presence_absence.set_index('Gene')
 gene_annotation_dict = Presence_absence['Annotation'].to_dict()
 
-
-
-# %%
+lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.50, 0.10)

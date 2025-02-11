@@ -27,7 +27,7 @@ set_alpha <- function(c, alpha=1.0) paste0(c,format(as.hexmode(round(alpha*255))
 
 # Load the trace file and check convergence
 
-bdsky_trace   <- beastio::readLog("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60_threshold_birthdeath.log", burnin=0.1)
+bdsky_trace   <- beastio::readLog("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60threshold_lineages_combined.log", burnin=0.1)
 
 summary(bdsky_trace)
 varnames(bdsky_trace)
