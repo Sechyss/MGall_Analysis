@@ -45,7 +45,13 @@ times1 <- 2004 - gridTimes1
 times2 <- 2015 - gridTimes2
 
 # Combine the plots into one with log scale for y-axis
-plotSkyline(times1, Re_gridded_hpd1, xlab="Date", ylab="Re", type="smooth", col=cols$blue, main="Combined Re values for two lineages", log="y")
-plotSkyline(times2, Re_gridded_hpd2, xlab="Date", ylab="Re", type="smooth", col=cols$orange, add=TRUE, log="y")
+plotSkylinePretty(times1, Re_gridded_hpd1, type='smooth', axispadding=0.0, 
+                  col=pal.dark(cblue), fill=pal.dark(cblue, 0.5), col.axis=pal.dark(cblue), 
+                  xlab="Date", ylab=expression("R"[e]), side=2, yline=2.5, xline=2, xgrid=TRUE, 
+                  ygrid=TRUE, gridcol=pal.dark(cgray), log='y')
+plotSkylinePretty(times2, Re_gridded_hpd2, type='smooth', axispadding=0.0, 
+                  col=pal.dark(corange), fill=pal.dark(corange, 0.5), col.axis=pal.dark(corange), 
+                  xlab="Date", ylab=expression("R"[e]), side=2, yline=2.5, xline=2, xgrid=TRUE, 
+                  ygrid=TRUE, gridcol=pal.dark(cgray), new=TRUE, add=TRUE, log='y')
 
 legend("topright", legend=c("Lineage 1", "Lineage 2"), col=c(cols$blue, cols$orange), lty=1, bty='n')
