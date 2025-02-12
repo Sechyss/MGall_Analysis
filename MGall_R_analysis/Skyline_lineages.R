@@ -1,4 +1,4 @@
-# Load the required packages and set global options
+# Load required packages
 library(coda)
 library(bdskytools)
 library(beastio)
@@ -6,52 +6,73 @@ library(RColorBrewer)
 
 setwd("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat")
 
-# Set up some colours
-cols  <- list(blue   = RColorBrewer::brewer.pal(12,"Paired")[2],
-              orange = RColorBrewer::brewer.pal(12,"Paired")[8])
+# Define colors
+cols <- list(
+  blue = RColorBrewer::brewer.pal(12, "Paired")[2],
+  orange = RColorBrewer::brewer.pal(12, "Paired")[8]
+)
 
-set_alpha <- function(c, alpha=1.0) paste0(c,format(as.hexmode(round(alpha*255)), width=2))
-
-# Load the trace files and check convergence
+# Load trace files
 logfile1 <- "C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60threshold_lineage1.log"
 logfile2 <- "C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60threshold_lineage2.log"
 
 bdsky_trace1 <- beastio::readLog(logfile1, burnin=0.1)
 bdsky_trace2 <- beastio::readLog(logfile2, burnin=0.1)
 
-# Extract parameter estimates and HPDs for each lineage
+# Extract Re values
 Re_sky1 <- beastio::getLogFileSubset(bdsky_trace1, "BDSKY_Serial")
 Re_sky2 <- beastio::getLogFileSubset(bdsky_trace2, "BDSKY_Serial")
 
-Re_hpd1 <- t(beastio::getHPDMedian(Re_sky1))
-Re_hpd2 <- t(beastio::getHPDMedian(Re_sky2))
+# Compute TMRCA
+tmrca_med1 <- median(bdsky_trace1[, "Tree.height"])
+tmrca_med2 <- median(bdsky_trace2[, "Tree.height"])
 
-# Plotting a "smooth" skyline
+# Define grid times separately for each lineage
+gridTimes1 <- seq(0, tmrca_med1, length.out=100)
+gridTimes2 <- seq(0, tmrca_med2, length.out=100)
 
-tmrca_med1  <- median(bdsky_trace1[, "Tree.height"])
-gridTimes1  <- seq(0, median(tmrca_med1), length.out=100)
-
-tmrca_med2  <- median(bdsky_trace2[, "Tree.height"])
-gridTimes2  <- seq(0, median(tmrca_med2), length.out=100)
-
+# Interpolate both lineages separately
 Re_gridded1 <- mcmc(bdskytools::gridSkyline(Re_sky1, bdsky_trace1[, "origin_BDSKY_Serial"], gridTimes1))
 Re_gridded_hpd1 <- t(getHPDMedian(Re_gridded1))
 
 Re_gridded2 <- mcmc(bdskytools::gridSkyline(Re_sky2, bdsky_trace2[, "origin_BDSKY_Serial"], gridTimes2))
 Re_gridded_hpd2 <- t(getHPDMedian(Re_gridded2))
 
-# Plotting combined Re values
+# Convert time to actual years (adjust based on reference year)
 times1 <- 2004 - gridTimes1
 times2 <- 2015 - gridTimes2
 
-# Combine the plots into one with log scale for y-axis
-plotSkylinePretty(times1, Re_gridded_hpd1, type='smooth', axispadding=0.0, 
-                  col=pal.dark(cblue), fill=pal.dark(cblue, 0.5), col.axis=pal.dark(cblue), 
-                  xlab="Date", ylab=expression("R"[e]), side=2, yline=2.5, xline=2, xgrid=TRUE, 
-                  ygrid=TRUE, gridcol=pal.dark(cgray), log='y')
-plotSkylinePretty(times2, Re_gridded_hpd2, type='smooth', axispadding=0.0, 
-                  col=pal.dark(corange), fill=pal.dark(corange, 0.5), col.axis=pal.dark(corange), 
-                  xlab="Date", ylab=expression("R"[e]), side=2, yline=2.5, xline=2, xgrid=TRUE, 
-                  ygrid=TRUE, gridcol=pal.dark(cgray), new=TRUE, add=TRUE, log='y')
+# Determine common y-axis range with 0 as the lower limit
+ylim_range <- range(c(0, Re_gridded_hpd1, Re_gridded_hpd2), na.rm=TRUE)
+ylim_range[1] <- 0
 
-legend("topright", legend=c("Lineage 1", "Lineage 2"), col=c(cols$blue, cols$orange), lty=1, bty='n')
+# Determine common x-axis range
+xlim_range <- range(c(times1, times2))
+
+# Save the plot as a high-resolution PNG file
+png("combined_lineages_plot.png", width=10, height=8, units="in", res=600)
+
+# Plot first lineage
+plotSkylinePretty(
+  times1, Re_gridded_hpd1, type='smooth', axispadding=0.0,
+  col=cols$blue, fill=adjustcolor(cols$blue, alpha.f=0.5),
+  xlab="Date", ylab=expression("R"[e]),
+  side=2, yline=2.5, xline=2, xgrid=TRUE, ygrid=TRUE,
+  ylim=ylim_range, xlim=xlim_range
+)
+
+# Overlay second lineage with different x-values but same y-axis scale
+par(new=TRUE)
+plotSkylinePretty(
+  times2, Re_gridded_hpd2, type='smooth', axispadding=0.0,
+  col=cols$orange, fill=adjustcolor(cols$orange, alpha.f=0.5),
+  xlab="", ylab="", side=2, yline=2.5, xline=2, xgrid=FALSE, ygrid=FALSE,
+  ylim=ylim_range, xlim=xlim_range
+)
+
+# Add legend
+legend("topright", legend=c("Lineage 1", "Lineage 2"),
+       col=c(cols$blue, cols$orange), lty=1, bty='n')
+
+# Close the PNG device
+dev.off()

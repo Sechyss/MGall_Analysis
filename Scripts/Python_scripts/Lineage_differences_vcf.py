@@ -100,6 +100,10 @@ leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name for leaf in leaves if leaf.name not in lineage2]
 
+lineage_dict = {'Lineage1': lineage1, 'Lineage2': lineage2}
+
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/lineage1.pickle', 'bw') as file:
+    pickle.dump(lineage_dict, file)
 
 lineage_1_snps = non_synonymous[non_synonymous['Sample'].isin(lineage1)]
 lineage_2_snps = non_synonymous[non_synonymous['Sample'].isin(lineage2)]
@@ -215,4 +219,3 @@ plt.gcf().subplots_adjust(bottom=0.3)
 plt.tight_layout()
 plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/COG_function_combined.png', dpi=600)
 plt.show()
-# %%
