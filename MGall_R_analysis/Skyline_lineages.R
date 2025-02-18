@@ -4,7 +4,7 @@ library(bdskytools)
 library(beastio)
 library(RColorBrewer)
 
-setwd("C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat")
+setwd("C:/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Re_data")
 
 # Define colors
 cols <- list(
@@ -28,8 +28,8 @@ tmrca_med1 <- median(bdsky_trace1[, "Tree.height"])
 tmrca_med2 <- median(bdsky_trace2[, "Tree.height"])
 
 # Define grid times separately for each lineage
-gridTimes1 <- seq(0, tmrca_med1, length.out=100)
-gridTimes2 <- seq(0, tmrca_med2, length.out=100)
+gridTimes1 <- seq(0, tmrca_med1, length.out=59)
+gridTimes2 <- seq(0, tmrca_med2, length.out=59)
 
 # Interpolate both lineages separately
 Re_gridded1 <- mcmc(bdskytools::gridSkyline(Re_sky1, bdsky_trace1[, "origin_BDSKY_Serial"], gridTimes1))
@@ -49,9 +49,11 @@ ylim_range[1] <- 0
 # Determine common x-axis range
 xlim_range <- range(c(times1, times2))
 
-# Save the plot as a high-resolution PNG file
-png("combined_lineages_plot.png", width=10, height=8, units="in", res=600)
+# Save variables to an RData file for later use in Python
+save(Re_gridded_hpd1, Re_gridded_hpd2, times1, times2, file="lineages_data.RData")
 
+# Save the plot as a high-resolution PNG file
+png("combined_lineages_plot.png", width=6000, height=3600, units="px", res=600)
 # Plot first lineage
 plotSkylinePretty(
   times1, Re_gridded_hpd1, type='smooth', axispadding=0.0,
