@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import pyreadr
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 data = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Skygrid_reconstruction.csv')
 
@@ -70,5 +72,76 @@ plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_V
 # Show the plot
 plt.show()
 
-# %%
+# %% Plot Re_gridded_hpd1 and Re_gridded_hpd2
+plt.figure(figsize=(10, 6))
 
+plt.plot(Re_gridded_hpd1_df['times1'], Re_gridded_hpd1_df['med'], color='C0', label='Lineage1')
+plt.fill_between(Re_gridded_hpd1_df['times1'], Re_gridded_hpd1_df['lower'], Re_gridded_hpd1_df['upper'], color='C0', edgecolor='black', alpha=0.2, label='95% CI')
+plt.plot(Re_gridded_hpd2_df['times2'], Re_gridded_hpd2_df['med'], color='C1', label='Lineage2')
+plt.fill_between(Re_gridded_hpd2_df['times2'], Re_gridded_hpd2_df['lower'], Re_gridded_hpd2_df['upper'], color='C1', edgecolor='black', alpha=0.2, label='95% CI')
+
+# Set the x-axis limits to cover the range of both datasets
+combined_time = pd.concat([Re_gridded_hpd1_df['times1'], Re_gridded_hpd2_df['times2']])
+plt.xlim(left=combined_time.min(), right=combined_time.max())
+#plt.xlim(left=time.min(), right=time.max())
+
+plt.ylim(bottom=0, top=30)
+# Remove the top and right spines (the square around the plot)
+plt.gca().spines['top'].set_visible(False)
+plt.gca().spines['right'].set_visible(False)
+
+# Add labels and title
+plt.xlabel('Time')
+plt.ylabel('Re')
+plt.legend()
+plt.tight_layout()
+
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Re_gridded_hpd.png', dpi=600)
+
+# Show the plot
+plt.show()
+
+
+#%% Combine the previous figures into a single PNG with A being the first figure and B the second one
+
+# Create a new figure with two subplots (A and B)
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12), sharex=True)
+
+# Plot the first figure (A) on the first subplot (ax1)
+ax1.plot(time, median_log, color='black')
+ax1.fill_between(time, lower_log, upper_log, color='none', edgecolor='black', alpha=0.2, hatch='//')
+
+bottom = np.zeros_like(time)
+for lineage in lineages_to_plot:
+    ax1.fill_between(time, bottom, bottom + combined_df[lineage] * median_log / 100, alpha=0.5, label=lineage.split('_')[0].replace('1', ' A').replace('2', ' B'))
+    bottom += combined_df[lineage] * median_log / 100
+
+ax1.spines['top'].set_visible(False)
+ax1.spines['right'].set_visible(False)
+ax1.set_ylabel('Log$_{10}$(N$_{e}$τ)')
+ax1.legend()
+ax1.set_xlim(left=combined_time.min(), right=combined_time.max())
+ax1.set_ylim(bottom=0)
+ax1.set_title('A', loc='left')
+
+# Plot the second figure (B) on the second subplot (ax2)
+ax2.plot(Re_gridded_hpd1_df['times1'], Re_gridded_hpd1_df['med'], color='C0', label='Lineage1')
+ax2.fill_between(Re_gridded_hpd1_df['times1'], Re_gridded_hpd1_df['lower'], Re_gridded_hpd1_df['upper'], color='C0', edgecolor='C0', alpha=0.2)
+ax2.plot(Re_gridded_hpd2_df['times2'], Re_gridded_hpd2_df['med'], color='C1', label='Lineage2')
+ax2.fill_between(Re_gridded_hpd2_df['times2'], Re_gridded_hpd2_df['lower'], Re_gridded_hpd2_df['upper'], color='C1', edgecolor='C1', alpha=0.2)
+
+ax2.set_xlim(left=combined_time.min(), right=combined_time.max())
+ax2.set_ylim(bottom=0, top=30)
+ax2.spines['top'].set_visible(False)
+ax2.spines['right'].set_visible(False)
+ax2.set_xlabel('Time')
+ax2.set_ylabel('R$_{e}$')
+ax2.set_title('B', loc='left')
+
+# Link the x-axes of both subplots
+ax1.get_shared_x_axes().join(ax1, ax2)
+
+plt.tight_layout()
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Combined_Figures.png', dpi=600)
+
+plt.show()

@@ -2,12 +2,23 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import os
 
-os.chdir('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/pangenome_results_filtered/aligned_gene_sequences/')
-for file in os.listdir('/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/pangenome_results_filtered/aligned_gene_sequences/'):
-    fastafile = SeqIO.parse(file, 'fasta')
-    with open(str(file).replace('.aln.fas', '.fasta').replace('~', '-'), 'a') as handle:
-        for record in fastafile:
-            header = str(record.id).split(';')[0]+'_'+str(file).replace('.aln.fas', '').replace('~', '-')
-            sequence = record.seq
-            seq_record = SeqRecord(sequence, id=header, description='')
-            SeqIO.write(seq_record, handle, 'fasta')
+if '__main__' == __name__:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--directory', required=True, type=str)
+    params = parser.parse_args()
+
+    os.chdir(params.directory)
+    for file in os.listdir(params.directory):
+        if not file.endswith('.aln.fas'):
+            continue
+        else:
+            fastafile = SeqIO.parse(file, 'fasta')
+            with open(str(file).replace('.aln.fas', '.fasta').replace('~', '-'), 'a') as handle:
+                for record in fastafile:
+                    header = str(record.id).split(';')[0]+'_'+str(file).replace('.aln.fas', '').replace('~', '-')
+                    sequence = record.seq
+                    seq_record = SeqRecord(sequence, id=header, description='')
+                    SeqIO.write(seq_record, handle, 'fasta')

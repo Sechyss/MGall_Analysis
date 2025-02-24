@@ -3,21 +3,30 @@ from Bio.SeqRecord import SeqRecord
 import os
 
 from tqdm import tqdm
+import argparse
 
 # Load sequences
-sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_60thres.fasta'
-alignment = SeqIO.parse(sequences, format="fasta")
+def main():
+    parser = argparse.ArgumentParser(description="Divide a fasta file into multiple fasta files.")
+    parser.add_argument('-i', '--input', required=True, help='Input fasta file')
+    parser.add_argument('-o', '--output_dir', required=True, help='Output directory for individual fasta files')
+    parser.add_argument('-l', '--list_file', required=True, help='Output list file with paths to individual fasta files')
+    args = parser.parse_args()
 
-#%% Divide into multiple fasta files
+    sequences = args.input
+    alignment = SeqIO.parse(sequences, format="fasta")
 
-path_2_file = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/Trimmed_fasta/'
-os.chdir(path_2_file)
+    # Change to the output directory
+    os.chdir(args.output_dir)
 
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/List_files_all_VA94-Trimmed.txt', 'a') as f:
-    for record in tqdm(alignment):
-        with open(str(record.id)+'.fasta', 'a') as handle:
-            header = record.id
-            sequence = record.seq
-            seq_record = SeqRecord(sequence, id=header, description='')
-            SeqIO.write(seq_record, handle, 'fasta')
-            f.write(f"{header}\t{path_2_file + header+'.fasta'}\n")
+    with open(args.list_file, 'a') as f:
+        for record in tqdm(alignment):
+            with open(str(record.id) + '.fasta', 'a') as handle:
+                header = record.id
+                sequence = record.seq
+                seq_record = SeqRecord(sequence, id=header, description='')
+                SeqIO.write(seq_record, handle, 'fasta')
+                f.write(f"{header}\t{os.path.join(args.output_dir, header + '.fasta')}\n")
+
+if __name__ == "__main__":
+    main()

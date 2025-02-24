@@ -13,7 +13,7 @@ from ete3 import Tree
 
 
 #%%
-os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/Snp_differences_lineages/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/')
 
 snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
 snps_sra = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/All_mutation_matrix.xlsx', index_col=0, sheet_name='Sheet1', engine='openpyxl')
@@ -101,6 +101,13 @@ leaves = tree_file.get_leaves()
 lineage1 = [leaf.name for leaf in leaves if leaf.name not in lineage2]
 
 lineage_dict = {'Lineage1': lineage1, 'Lineage2': lineage2}
+
+# Save filtered versions of all_snps and non_synonymous matrices for both lineages combined
+all_snps_combined = all_snps[all_snps['Sample'].isin(lineage1 + lineage2)]
+non_synonymous_combined = non_synonymous[non_synonymous['Sample'].isin(lineage1 + lineage2)]
+
+all_snps_combined.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/All_snps_sra_lucy_annotated.csv', index=False)
+non_synonymous_combined.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/non_synonymous_snps_sra_lucy_annotated.csv', index=False)
 
 with open('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/lineage1.pickle', 'bw') as file:
     pickle.dump(lineage_dict, file)
