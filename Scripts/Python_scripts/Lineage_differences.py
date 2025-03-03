@@ -25,7 +25,7 @@ def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
 
 
 
-#%% Create the lineages
+# Create the lineages
 
 lineage2 = ['S11_1994',
 'A090809_2009',
