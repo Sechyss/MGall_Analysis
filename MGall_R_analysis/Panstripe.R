@@ -6,7 +6,7 @@ set.seed(1234)
 setwd("C:/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Pangenome_results_HF/")
 
 # Load the tree and gene presence absence matrix
-pa <- read_rtab("gene_presence_absence_filt_pseudo_length_frag.Rtab")
+pa <- read_rtab("Edited_gene_presence_absence_filt_pseudo_length_frag_Copy.Rtab")
 tree <- read.tree("Iqtree_phylogenies/core-genome_HF.contree")
 
 # Run panstripe pipeline
