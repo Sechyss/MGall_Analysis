@@ -9,6 +9,19 @@ setwd("C:/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Pan
 pa <- read_rtab("Edited_gene_presence_absence_filt_pseudo_length_frag_Copy.Rtab")
 tree <- read.tree("Iqtree_phylogenies/core-genome_HF.contree")
 
+# Compare the index of table pa and the tree labels
+pa_index <- rownames(pa)
+tree_labels <- tree$tip.label
+
+# Find mismatches
+mismatches <- setdiff(pa_index, tree_labels)
+if (length(mismatches) > 0) {
+    cat("Mismatches found:\n")
+    print(mismatches)
+} else {
+    cat("No mismatches found.\n")
+}
+
 # Run panstripe pipeline
 fit <- panstripe(pa, tree, nboot = 100, conf = 0.95)
 

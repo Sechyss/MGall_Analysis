@@ -1,6 +1,7 @@
 import os
 import pickle
 import argparse
+import re
 
 if '__main__' == __name__:
 
@@ -28,9 +29,8 @@ if '__main__' == __name__:
             for line in infile:
                 # Replace each key in the dictionary with its corresponding value
                 for old_string, new_string in sorted_replacements.items():
-                    if old_string in line:
-                        line = line.replace(old_string, new_string)
-                        break  # Stop searching for more keys after the first match
+                    # Use regular expression to match whole words
+                    line = re.sub(rf'\b{re.escape(old_string)}\b', new_string, line)
                 # Write the modified line to the output file
                 outfile.write(line)
     except FileNotFoundError:
