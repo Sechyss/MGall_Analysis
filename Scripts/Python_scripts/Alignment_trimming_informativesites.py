@@ -36,7 +36,6 @@ def find_parsimony_informative_sites(alignment_file, format_file="fasta"):
 
 sequences = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_all_gubbins_run.masked.aln'
 informative_sites_bp = find_parsimony_informative_sites(sequences)
-print(f"Parsimony-informative sites: {informative_sites_bp}")
 
 
 def calculate_column_variability(alignment_file, format_file="fasta"):

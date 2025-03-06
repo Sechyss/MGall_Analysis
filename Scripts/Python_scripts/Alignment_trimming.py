@@ -50,5 +50,5 @@ if __name__ == '__main__':
         SeqIO.write(filtered_sequences, f, 'fasta')
 
     # Write the removed columns DataFrame to a CSV file
-    csv_path = os.path.join(os.path.dirname(output_path), 'removed_columns.csv')
+    csv_path = os.path.join(os.path.dirname(output_path), 'removed_columns_nogaps.csv')
     removed_columns_df.to_csv(csv_path, index=False)
