@@ -1,7 +1,7 @@
 from Bio import AlignIO
 
 # Load sequences
-sequences ='/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_60thres.fasta'
+sequences ='/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_consensus_all_trimmed_60threshold.fasta'
 alignment = AlignIO.read(sequences, format="fasta")
 
 # Lineage 2
@@ -66,7 +66,11 @@ lineage2 = ['S11_1994',
 'A013_2011',
 'MG26_AL_11_2011',
 'A018_2011',
-'MG30_AL_11_2011'
+'MG30_AL_11_2011',
+'VA94_7994-1-7P',
+'NC96_1596-4-2P',
+'NC08_2008.031-4-3P',
+'NC06_2006.080-5-2P'
             ]
 
 # Separate lineage 2 sequences into a new alignment

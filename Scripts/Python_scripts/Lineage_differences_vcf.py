@@ -92,8 +92,11 @@ lineage2 = ['S11_1994',
 'A013_2011',
 'MG26_AL_11_2011',
 'A018_2011',
-'MG30_AL_11_2011'
-            ]
+'MG30_AL_11_2011',
+'VA94_7994-1-7P',
+'NC96_1596-4-2P',
+'NC08_2008.031-4-3P',
+'NC06_2006.080-5-2P']
 
 tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/VA94_consensus_all_60thres.finaltree.nwk')
 leaves = tree_file.get_leaves()
@@ -109,7 +112,7 @@ non_synonymous_combined = non_synonymous[non_synonymous['Sample'].isin(lineage1 
 all_snps_combined.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/All_snps_sra_lucy_annotated.csv', index=False)
 non_synonymous_combined.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/non_synonymous_snps_sra_lucy_annotated.csv', index=False)
 
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/lineage1.pickle', 'bw') as file:
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/lineage_dict.pickle', 'bw') as file:
     pickle.dump(lineage_dict, file)
 
 lineage_1_snps = non_synonymous[non_synonymous['Sample'].isin(lineage1)]
