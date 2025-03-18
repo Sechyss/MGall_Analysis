@@ -55,7 +55,3 @@ for node in tree_file.traverse():
 ts = TreeStyle()
 ts.show_leaf_name = True
 tree_file.show(tree_style=ts)
-
-
-
-# %%
