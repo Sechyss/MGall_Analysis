@@ -5,7 +5,7 @@ sequences ='/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA
 alignment = AlignIO.read(sequences, format="fasta")
 
 # Lineage 2
-lineage2 = ['S11_1994',
+lineage2 = [
 'A090809_2009',
 'G_2015',
 'L_2015',
@@ -67,8 +67,6 @@ lineage2 = ['S11_1994',
 'MG26_AL_11_2011',
 'A018_2011',
 'MG30_AL_11_2011',
-'VA94_7994-1-7P',
-'NC96_1596-4-2P',
 'NC08_2008.031-4-3P',
 'NC06_2006.080-5-2P'
             ]
