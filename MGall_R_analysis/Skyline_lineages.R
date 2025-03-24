@@ -13,8 +13,8 @@ cols <- list(
 )
 
 # Load trace files
-logfile1 <- "C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60threshold_lineage1.log"
-logfile2 <- "C:/Users/at991/Software/BEAST.v2.7.7.Windows/BEAST/bat/VA94_all_60threshold_lineage2.log"
+logfile1 <- "C:/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_lineage1_trimmed_60threshold_50.log"
+logfile2 <- "C:/Users/at991/OneDrive - University of Exeter/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_lineage2_trimmed_60threshold_50.log"
 
 bdsky_trace1 <- beastio::readLog(logfile1, burnin=0.1)
 bdsky_trace2 <- beastio::readLog(logfile2, burnin=0.1)

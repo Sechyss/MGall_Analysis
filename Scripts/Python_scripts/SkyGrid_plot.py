@@ -6,7 +6,7 @@ import pyreadr
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-data = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Skygrid_reconstruction.csv')
+data = pd.read_table('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/Skygrid_data.csv', sep='\t', skiprows=1)
 
 # Extract relevant columns
 time = data['time']
@@ -19,7 +19,7 @@ lower_log = np.log10(lower)
 upper_log = np.log10(upper)
 
 # Lineage differences over time and relative to the population
-data_lineages = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Lineages_throughtime.csv')
+data_lineages = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/Lineage_through_time.csv')
 # Invert the data in data_lineages
 data_lineages_inverted = data_lineages.iloc[::-1].reset_index(drop=True)
 
@@ -67,7 +67,7 @@ plt.xlim(left=time.min(), right=time.max())
 plt.ylim(bottom=0)
 plt.tight_layout()
 
-plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Skygrid_Lineages_throughtime_per.png', dpi=600)
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/Skygrid_Lineages_throughtime_per.png', dpi=600)
 
 # Show the plot
 plt.show()
@@ -120,7 +120,7 @@ ax1.spines['top'].set_visible(False)
 ax1.spines['right'].set_visible(False)
 ax1.set_ylabel('Log$_{10}$(N$_{e}$τ)')
 ax1.legend()
-ax1.set_xlim(left=combined_time.min(), right=combined_time.max())
+ax1.set_xlim(left=1991, right=combined_time.max())
 ax1.set_ylim(bottom=0)
 ax1.set_title('A', loc='left')
 
@@ -130,7 +130,7 @@ ax2.fill_between(Re_gridded_hpd1_df['times1'], Re_gridded_hpd1_df['lower'], Re_g
 ax2.plot(Re_gridded_hpd2_df['times2'], Re_gridded_hpd2_df['med'], color='C1', label='Lineage2')
 ax2.fill_between(Re_gridded_hpd2_df['times2'], Re_gridded_hpd2_df['lower'], Re_gridded_hpd2_df['upper'], color='C1', edgecolor='C1', alpha=0.2)
 
-ax2.set_xlim(left=combined_time.min(), right=combined_time.max())
+ax2.set_xlim(left=1991, right=combined_time.max())
 ax2.set_ylim(bottom=0, top=30)
 ax2.spines['top'].set_visible(False)
 ax2.spines['right'].set_visible(False)
@@ -145,3 +145,5 @@ plt.tight_layout()
 plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Combined_Figures.png', dpi=600)
 
 plt.show()
+
+# %%
