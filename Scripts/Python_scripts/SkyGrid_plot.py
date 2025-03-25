@@ -63,7 +63,7 @@ plt.xlabel('Time')
 plt.ylabel('Log$_{10}$(N$_{e}$τ)')
 plt.legend()
 # Adjust the plot to remove space between the beginning of the lines and the y-axis
-plt.xlim(left=time.min(), right=time.max())
+plt.xlim(left=1991, right=time.max())
 plt.ylim(bottom=0)
 plt.tight_layout()
 
