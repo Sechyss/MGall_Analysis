@@ -5,6 +5,8 @@ import pickle
 import matplotlib.pyplot as plt
 from collections import Counter
 import io
+from PIL import Image
+import numpy as np
 
 # Load data
 snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
@@ -35,7 +37,9 @@ def create_pie_chart(mutations):
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     plt.close(fig)
-    return buf
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%')
+    buf = io.BytesIO()
 
 # Add pie charts to nodes
 for node in tree_file.traverse():
@@ -54,4 +58,10 @@ for node in tree_file.traverse():
 # Render tree
 ts = TreeStyle()
 ts.show_leaf_name = True
+print(f"No non-synonymous mutations found for taxa: {taxa}")
+
 tree_file.show(tree_style=ts)
+
+# Save the tree to a file
+tree_file.render('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_tree_with_pie_charts.png', tree_style=ts)
+

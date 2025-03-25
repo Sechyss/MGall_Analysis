@@ -77,7 +77,7 @@ lineage1_alignment = AlignIO.MultipleSeqAlignment(lineage1_sequences)
 lineage2_sequences = [record for record in alignment if record.id in lineage2]
 lineage2_alignment = AlignIO.MultipleSeqAlignment(lineage2_sequences)
 
-# Write both alignments to output FASTA files
+#%% Write both alignments to output FASTA files
 output_path1 = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_lineage1_60threshold.masked.fasta'
 output_path2 = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VA94_lineage2_60threshold.masked.fasta'
 

@@ -98,7 +98,7 @@ lineage2 = ['S11_1994',
 'NC08_2008.031-4-3P',
 'NC06_2006.080-5-2P']
 
-tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/VA94_consensus_all_60thres.finaltree.nwk')
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_highburnin.finaltree.nwk')
 leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name for leaf in leaves if leaf.name not in lineage2]
