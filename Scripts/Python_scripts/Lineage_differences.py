@@ -4,6 +4,8 @@ import pandas as pd
 import math
 
 from venny4py.venny4py import *
+import seaborn as sns
+import matplotlib.pyplot as plt
 from ete3 import Tree
 
 
@@ -26,7 +28,6 @@ def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
 
 
 # Create the lineages
-
 lineage2 = [
 'A090809_2009',
 'G_2015',
@@ -96,7 +97,6 @@ lineage2 = [
 tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_highburnin.finaltree.nwk')
 leaves = tree_file.get_leaves()
 
-
 lineage1 = [leaf.name.replace("'", "") for leaf in leaves if leaf.name.replace("'", "") not in lineage2]
 
 #%% Load the data and the lineages
@@ -144,5 +144,26 @@ Presence_absence.columns = Presence_absence.columns.to_series().replace(lucy_rep
 Presence_absence.columns = Presence_absence.columns.to_series().replace(sra_replacement)
 
 gene_annotation_dict = Presence_absence['Annotation'].to_dict()
+lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.60, 0.10)
 
-lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.50, 0.10)
+restructured_df = Presence_absence.set_index('Gene')
+# Reorder the columns to have lineage 1 first and then lineage 2
+ordered_columns = lineage1 + lineage2
+restructured_df = restructured_df[ordered_columns]
+# Create a binary matrix (1 for presence, 0 for absence)
+binary_matrix = restructured_df.notna().astype(int).drop(columns=['Annotation', 'Non-unique Gene name'])
+
+# Create a color palette to highlight the lineages
+col_colors = ['#1f77b4'] * len(lineage1) + ['#ff7f0e'] * len(lineage2)  # Blue for lineage 1, Orange for lineage 2
+
+# Create the heatmap
+plt.figure(figsize=(30, 20))  # Adjust the figure size as needed
+sns.heatmap(binary_matrix, cmap='viridis', cbar=True, linewidths=0.5, col_colors=col_colors)
+plt.title('Gene Presence/Absence Heatmap')
+plt.xlabel('Samples')
+plt.ylabel('Genes')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/gene_presence_absence_heatmap.png', dpi=600)
+plt.show()
