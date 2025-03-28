@@ -93,7 +93,7 @@ lineage2 = [
 'NC06_2006.080-5-2P'
             ]
 
-tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/VA94_consensus_all_60thres.finaltree.nwk')
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_highburnin.finaltree.nwk')
 leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name for leaf in leaves if leaf.name not in lineage2]
@@ -131,12 +131,12 @@ sets = {
     'Lineage2_genes': {x for x in genes_affected_l2 if not (isinstance(x, float) and math.isnan(x))},
 }
 
-venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png',dpi=600)
+venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png',dpi=600)
 
 #%% Compare presence-absence of genes from the pangenome
 
 Presence_absence = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/'
-                               'pangenome_results_filtered/gene_presence_absence.csv')
+                               'pangenome_results_HF/gene_presence_absence.csv')
 
 Presence_absence.columns = Presence_absence.columns.to_series().replace(lucy_replacement)
 
@@ -145,3 +145,5 @@ Presence_absence.columns = Presence_absence.columns.to_series().replace(sra_repl
 gene_annotation_dict = Presence_absence['Annotation'].to_dict()
 
 lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.50, 0.10)
+
+# %%
