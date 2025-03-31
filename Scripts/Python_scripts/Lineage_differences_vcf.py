@@ -102,6 +102,8 @@ tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_
 leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name.replace("'", "") for leaf in leaves if leaf.name.replace("'", "") not in lineage2]
+lineage1 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage1]
+lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage2]
 
 lineage_dict = {'Lineage1': lineage1, 'Lineage2': lineage2}
 

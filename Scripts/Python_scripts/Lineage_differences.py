@@ -5,6 +5,7 @@ import math
 
 from venny4py.venny4py import *
 import seaborn as sns
+import numpy as np
 import matplotlib.pyplot as plt
 from ete3 import Tree
 
@@ -98,6 +99,8 @@ tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_
 leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name.replace("'", "") for leaf in leaves if leaf.name.replace("'", "") not in lineage2]
+lineage1 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage1]
+lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage2]
 
 #%% Load the data and the lineages
 snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
@@ -143,7 +146,6 @@ Presence_absence.columns = Presence_absence.columns.to_series().replace(lucy_rep
 
 Presence_absence.columns = Presence_absence.columns.to_series().replace(sra_replacement)
 
-gene_annotation_dict = Presence_absence['Annotation'].to_dict()
 lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.60, 0.10)
 
 restructured_df = Presence_absence.set_index('Gene')
@@ -151,19 +153,33 @@ restructured_df = Presence_absence.set_index('Gene')
 ordered_columns = lineage1 + lineage2
 restructured_df = restructured_df[ordered_columns]
 # Create a binary matrix (1 for presence, 0 for absence)
-binary_matrix = restructured_df.notna().astype(int).drop(columns=['Annotation', 'Non-unique Gene name'])
+binary_matrix = restructured_df.notna().astype(int)
+binary_matrix = binary_matrix.loc[~(binary_matrix.mean(axis=1) >= 0.95)]
 
-# Create a color palette to highlight the lineages
-col_colors = ['#1f77b4'] * len(lineage1) + ['#ff7f0e'] * len(lineage2)  # Blue for lineage 1, Orange for lineage 2
+# Create the heatmap with separation between lineages
 
-# Create the heatmap
+# Split the binary matrix into two parts for lineage 1 and lineage 2
+binary_matrix_lineage1 = binary_matrix[lineage1]
+binary_matrix_lineage2 = binary_matrix[lineage2]
+
+# Add a column of NaN values to create a gap between the two lineages
+gap = pd.DataFrame(np.nan, index=binary_matrix.index, columns=['Gap'])
+binary_matrix_with_gap = pd.concat([binary_matrix_lineage1, gap, binary_matrix_lineage2], axis=1)
+
+col_colors = sns.color_palette(['#1f77b4', '#ff7f0e'])  # Blue for lineage 1, Orange for lineage 2
+
+# Plot the heatmap
 plt.figure(figsize=(30, 20))  # Adjust the figure size as needed
-sns.heatmap(binary_matrix, cmap='viridis', cbar=True, linewidths=0.5, col_colors=col_colors)
-plt.title('Gene Presence/Absence Heatmap')
-plt.xlabel('Samples')
-plt.ylabel('Genes')
-plt.xticks(rotation=90)
+sns.heatmap(binary_matrix_with_gap, cmap=col_colors, cbar=False, linewidths=0.5)
+
+# Update x-axis labels to exclude "Gap"
+xtick_labels = lineage1 + [''] + lineage2  # Replace "Gap" with an empty string
+plt.xticks(ticks=np.arange(len(xtick_labels)) + 0.5, labels=xtick_labels, rotation=90)
+
+plt.xlabel('Samples', fontsize=20)
+plt.ylabel('Genes', fontsize=20)
 plt.yticks(rotation=0)
 plt.tight_layout()
-plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/gene_presence_absence_heatmap.png', dpi=600)
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/gene_presence_absence_heatmap_with_gap.png', dpi=600)
 plt.show()
+# %%
