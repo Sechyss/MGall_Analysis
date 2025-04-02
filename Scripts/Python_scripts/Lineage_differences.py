@@ -8,8 +8,9 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 from ete3 import Tree
+import logging
 
-
+logging.basicConfig(level=logging.INFO)
 
 def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
     dataframe_group1 = [col for col in dataframe.columns if col in group1]
@@ -139,14 +140,26 @@ venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangeno
 
 #%% Compare presence-absence of genes from the pangenome
 
-Presence_absence = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/'
-                               'pangenome_results_HF/gene_presence_absence_filt_pseudo_length_frag.csv')
+base_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF'
+presence_absence_file = f'{base_path}/gene_presence_absence_filt_pseudo_length_frag.csv'
+venn_output_path = f'{base_path}/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png'
+heatmap_output_path = f'{base_path}/Lineage_differences/gene_presence_absence_heatmap_with_gap.png'
 
-Presence_absence.columns = Presence_absence.columns.to_series().replace(lucy_replacement)
+try:
+    Presence_absence = pd.read_csv(presence_absence_file)
+except FileNotFoundError:
+    print(f"File not found: {presence_absence_file}")
+    raise
 
-Presence_absence.columns = Presence_absence.columns.to_series().replace(sra_replacement)
+replacements = {**lucy_replacement, **sra_replacement}
+Presence_absence.columns = Presence_absence.columns.to_series().replace(replacements)
 
 lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.60, 0.10)
+
+#%% Heatmap of the presence-absence of genes in the two lineages
+FIG_SIZE = (30, 20)
+FONT_SIZE = 20
+COLORS = ['#1f77b4', '#ff7f0e']  # Blue and Orange
 
 restructured_df = Presence_absence.set_index('Gene')
 # Reorder the columns to have lineage 1 first and then lineage 2
@@ -154,7 +167,8 @@ ordered_columns = lineage1 + lineage2
 restructured_df = restructured_df[ordered_columns]
 # Create a binary matrix (1 for presence, 0 for absence)
 binary_matrix = restructured_df.notna().astype(int)
-binary_matrix = binary_matrix.loc[~(binary_matrix.mean(axis=1) >= 0.95)]
+row_means = binary_matrix.mean(axis=1)
+binary_matrix = binary_matrix.loc[~(row_means > 0.95)]
 
 # Create the heatmap with separation between lineages
 
@@ -166,20 +180,22 @@ binary_matrix_lineage2 = binary_matrix[lineage2]
 gap = pd.DataFrame(np.nan, index=binary_matrix.index, columns=['Gap'])
 binary_matrix_with_gap = pd.concat([binary_matrix_lineage1, gap, binary_matrix_lineage2], axis=1)
 
-col_colors = sns.color_palette(['#1f77b4', '#ff7f0e'])  # Blue for lineage 1, Orange for lineage 2
+col_colors = sns.color_palette(COLORS)  # Blue for lineage 1, Orange for lineage 2
 
 # Plot the heatmap
-plt.figure(figsize=(30, 20))  # Adjust the figure size as needed
-sns.heatmap(binary_matrix_with_gap, cmap=col_colors, cbar=False, linewidths=0.5)
+plt.figure(figsize=FIG_SIZE)  # Adjust the figure size as needed
+sns.heatmap(binary_matrix_with_gap, cmap=col_colors, cbar=False, linewidths=0.5, yticklabels=False)
 
 # Update x-axis labels to exclude "Gap"
 xtick_labels = lineage1 + [''] + lineage2  # Replace "Gap" with an empty string
 plt.xticks(ticks=np.arange(len(xtick_labels)) + 0.5, labels=xtick_labels, rotation=90)
 
-plt.xlabel('Samples', fontsize=20)
-plt.ylabel('Genes', fontsize=20)
+plt.xlabel('Samples', fontsize=FONT_SIZE)
+plt.ylabel('Genes', fontsize=FONT_SIZE)
 plt.yticks(rotation=0)
 plt.tight_layout()
-plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/gene_presence_absence_heatmap_with_gap.png', dpi=600)
+plt.savefig(heatmap_output_path, dpi=600)
 plt.show()
+
+logging.info("Heatmap created successfully.")
 # %%
