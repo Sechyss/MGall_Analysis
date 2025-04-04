@@ -154,7 +154,7 @@ except FileNotFoundError:
 replacements = {**lucy_replacement, **sra_replacement}
 Presence_absence.columns = Presence_absence.columns.to_series().replace(replacements)
 
-lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.60, 0.10)
+lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.60, 0.30)
 
 #%% Heatmap of the presence-absence of genes in the two lineages
 FIG_SIZE = (30, 20)
