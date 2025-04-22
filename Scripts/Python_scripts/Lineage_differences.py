@@ -3,6 +3,8 @@ import pickle
 import pandas as pd
 import math
 
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 from venny4py.venny4py import *
 import seaborn as sns
 import numpy as np
@@ -28,7 +30,7 @@ def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
     return filtered_genes_group1, filtered_genes_group2
 
 
-
+base_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF'
 # Create the lineages
 lineage2 = [
 'A090809_2009',
@@ -96,19 +98,18 @@ lineage2 = [
 'NC06_2006.080-5-2P'
             ]
 
-tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_highburnin.finaltree.nwk')
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_combined.finaltree.newick')
 leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name.replace("'", "") for leaf in leaves if leaf.name.replace("'", "") not in lineage2]
 lineage1 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage1]
 lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage2]
 
+lucy_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb'))
+sra_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/SRA_replacements.pickle', 'rb'))
 #%% Load the data and the lineages
 snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
 snps_sra = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/All_mutation_matrix.xlsx', index_col=0, sheet_name='Sheet1', engine='openpyxl')
-
-lucy_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb'))
-sra_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/SRA_replacements.pickle', 'rb'))
 
 snps_lucy['Sample'] = snps_lucy['Sample'].replace(lucy_replacement)
 snps_sra['Sample'] = snps_sra['Sample'].replace(sra_replacement)
@@ -140,7 +141,6 @@ venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangeno
 
 #%% Compare presence-absence of genes from the pangenome
 
-base_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF'
 presence_absence_file = f'{base_path}/gene_presence_absence_filt_pseudo_length_frag.csv'
 venn_output_path = f'{base_path}/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png'
 heatmap_output_path = f'{base_path}/Lineage_differences/gene_presence_absence_heatmap_with_gap.png'
@@ -155,6 +155,21 @@ replacements = {**lucy_replacement, **sra_replacement}
 Presence_absence.columns = Presence_absence.columns.to_series().replace(replacements)
 
 lineage1_df, lineage2_df = filter_presence_absence(Presence_absence, lineage1, lineage2, 0.60, 0.30)
+lineage1_genes = lineage1_df['Gene'].to_list()
+lineage2_genes = lineage2_df['Gene'].to_list()
+#%% Fasta file creation of the genes in the different lineages
+
+def fastafile_creation(fasta_file, list_genes, reference_file):
+    with open(fasta_file, 'a') as handle:
+        fasta_db = SeqIO.parse(reference_file, 'fasta')
+        for record in fasta_db:
+            if record.id in list_genes:
+                fasta_aa = SeqRecord(record.seq, record.id, description='')
+                SeqIO.write(fasta_aa, handle, 'fasta')
+    handle.close()
+
+fastafile_creation(f'{base_path}/Lineage_differences/Lineage1_genes.fna', lineage1_genes, f'{base_path}/pan_genome_reference.fa')
+fastafile_creation(f'{base_path}/Lineage_differences/Lineage2_genes.fna', lineage2_genes, f'{base_path}/pan_genome_reference.fa')
 
 #%% Heatmap of the presence-absence of genes in the two lineages
 FIG_SIZE = (30, 20)
@@ -198,4 +213,3 @@ plt.savefig(heatmap_output_path, dpi=600)
 plt.show()
 
 logging.info("Heatmap created successfully.")
-# %%
