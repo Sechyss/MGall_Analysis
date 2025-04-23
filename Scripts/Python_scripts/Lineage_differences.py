@@ -182,6 +182,7 @@ ordered_columns = lineage1 + lineage2
 restructured_df = restructured_df[ordered_columns]
 # Create a binary matrix (1 for presence, 0 for absence)
 binary_matrix = restructured_df.notna().astype(int)
+binary_matrix.to_csv(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix.csv')
 row_means = binary_matrix.mean(axis=1)
 binary_matrix = binary_matrix.loc[~(row_means > 0.95)]
 
@@ -213,3 +214,5 @@ plt.savefig(heatmap_output_path, dpi=600)
 plt.show()
 
 logging.info("Heatmap created successfully.")
+
+# %%
