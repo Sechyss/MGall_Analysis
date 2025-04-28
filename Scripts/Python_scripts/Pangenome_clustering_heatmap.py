@@ -1,16 +1,14 @@
+#%% Import libraries and data
 """
 Created on Tue Oct 31 14:23:00 2023
 
 This script generates a heatmap of the presence-absence binary matrix of the pangenome and columns are group by hyerarchical clustering.
 
 """
-from encodings.punycode import T
 import pandas as pd
-from pyparsing import col
-import scipy.cluster.hierarchy as shc
 import seaborn as sns
 from ete3 import Tree
-
+import pickle
 from matplotlib import pyplot as plt
 
 # Create the lineages
@@ -88,6 +86,13 @@ lineage1 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem 
 lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage2]
 
 base_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF'
+
+
+# Import the dictionary with the lipoproteins
+with open(f'{base_path}/candidates_clusters_pangenome.pickle', 'rb') as f:
+    cluster_dict = pickle.load(f)
+
+#%% Create the binary matrix
 binary_matrix = pd.read_csv(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix.csv', index_col=0)
 row_means = binary_matrix.mean(axis=1)
 binary_matrix = binary_matrix.loc[~(row_means > 0.95)]
@@ -104,9 +109,26 @@ lineage_colors = {
 col_colors = binary_matrix.columns.to_series().map(
     lambda x: lineage_colors["lineage1"] if x in lineage1 else lineage_colors["lineage2"]
 )
+# Colour gene clusters for Cas9 protein, Motility genes, and Lipoproteins
+cluster_colors = {
+    "Cas9 protein": "#d62728",
+    "Motility genes": "#2ca02c",
+    "Lipoprotein": "#094782",
+    "non_cluster": "#7b49b5"
+}
+row_colors = binary_matrix.index.to_series().map(
+    lambda x: (
+        cluster_colors["Cas9 protein"] if x in cluster_dict.get('Cas9', []) else
+        cluster_colors["Motility genes"] if x in cluster_dict.get('Motility', []) else
+        cluster_colors["Lipoprotein"] if x in cluster_dict.get('Lipoprotein', []) else
+        cluster_colors["non_cluster"]
+    )
+)
+
+#%% Create the heatmap and clustering of data
 fig, ax = plt.subplots(figsize=(60, 60))
 clustering_dend = sns.clustermap(binary_matrix, metric="euclidean", method="ward", 
-                                 col_colors=col_colors,
+                                 col_colors=col_colors, row_colors=row_colors,
                                  xticklabels=True, yticklabels=True,
                                  cmap="YlGnBu", 
                                  figsize=(60, 60))
@@ -125,3 +147,4 @@ clustering_dend.ax_heatmap.set_yticklabels(
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.png', dpi=600, bbox_inches='tight')
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.pdf', dpi=600, bbox_inches='tight')
 plt.show()
+# %%
