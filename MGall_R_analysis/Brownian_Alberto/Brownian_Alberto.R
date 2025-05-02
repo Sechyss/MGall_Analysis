@@ -11,7 +11,7 @@ setwd('C:/Users/at991/PycharmProjects/MGall_Analysis/MGall_R_analysis/Brownian_A
 logit <- function(z) log(z/(1-z)) 
 #load('at_new.Rdata')
 t <- read.table('meta.txt',sep='\t',header=T)
-tre<-read.tree("coretree_noR.nwk")
+tre<-read.tree("Edited_VA94_consensus_all_trimmed_60threshold_50_combined.finaltree.newick")
 
 tre$edge.length=tre$edge.length+(1/500000)
 
@@ -60,13 +60,13 @@ doopt <- function(x,tre)
 #x <- logit(at3); names(x) <- rownames(core); xtit <- 'AT 3rd positions'
 #x <- sqrt(t$peak_score); names(x) <- t$Folder.name; xtit <- 'peak score'
 #x <- sqrt(t$mean_swel); names(x) <- t$Folder.name; xtit <- 'mean swell'
-x <- sqrt(t$peak_score)+sqrt(t$mean_swel); names(x) <- t$Folder.name; xtit <- 'JW virulence index'
+x <- sqrt(t$peak_score)+sqrt(t$mean_swel); names(x) <- t$final.name; xtit <- 'JW virulence index'
 
 mx <- mean(x,na.rm=T); sdx <- sd(x,na.rm=T)
 x <- (x-mx)/sdx
 
 # Use the temproal signal to root the tree
-dates <- t$year.sampling; names(dates) <- t$Folder.name
+dates <- t$year.sampling; names(dates) <- t$final.name
 dates <- dates[match(tre$tip.label,names(dates))]
 tre <- rtt(tre,dates)
 tre$edge.length <- tre$edge.length/max(tre$edge.length)

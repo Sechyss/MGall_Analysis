@@ -4,3 +4,13 @@
 .Ruserdata
 .vscode/settings.json
 .idea/*
+MGall_R_analysis/Brownian_Alberto/Brownian_Alberto_original.R
+MGall_R_analysis/Brownian_Alberto/Brownian_beasttree.pdf
+.gitignore
+MGall_R_analysis/Brownian_Alberto/coretree_noR.nwk
+MGall_R_analysis/Brownian_Alberto/Edited_VA94_consensus_all_trimmed_60threshold_50_combined.finaltree.newick
+MGall_R_analysis/Brownian_Alberto/Brownian_coretree.pdf
+MGall_R_analysis/Brownian_Alberto/meta.txt
+MGall_R_analysis/Brownian_Alberto/meta_original.txt
+MGall_R_analysis/Brownian_Alberto/coretree_noR.nwk
+MGall_R_analysis/Brownian_Alberto/meta.txt

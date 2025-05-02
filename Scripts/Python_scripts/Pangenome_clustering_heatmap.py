@@ -96,6 +96,10 @@ with open(f'{base_path}/candidates_clusters_pangenome.pickle', 'rb') as f:
 binary_matrix = pd.read_csv(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix.csv', index_col=0)
 row_means = binary_matrix.mean(axis=1)
 binary_matrix = binary_matrix.loc[~(row_means > 0.95)]
+# Reorganize columns to put lineage1 first and then lineage2
+lineage1_columns = [col for col in binary_matrix.columns if col in lineage1]
+lineage2_columns = [col for col in binary_matrix.columns if col in lineage2]
+binary_matrix = binary_matrix[lineage1_columns + lineage2_columns]
 
 # Assign colors to each lineage
 lineage_colors = {
@@ -129,6 +133,7 @@ row_colors = binary_matrix.index.to_series().map(
 fig, ax = plt.subplots(figsize=(60, 60))
 clustering_dend = sns.clustermap(binary_matrix, metric="euclidean", method="ward", 
                                  col_colors=col_colors, row_colors=row_colors,
+                                 col_cluster=False, row_cluster=True,
                                  xticklabels=True, yticklabels=True,
                                  cmap="YlGnBu", 
                                  figsize=(60, 60))

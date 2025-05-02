@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import pickle
 import argparse
@@ -8,10 +9,11 @@ if '__main__' == __name__:
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--file', required=True, type=str)
+    parser.add_argument('--dictionary', required=True, type=str)
     params = parser.parse_args()
 
     # Load the dictionary with the replacements
-    with open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb') as handle:
+    with open(params.dictionary, 'rb') as handle:
         sorted_replacements = pickle.load(handle)
 
     # Check if the file exists
