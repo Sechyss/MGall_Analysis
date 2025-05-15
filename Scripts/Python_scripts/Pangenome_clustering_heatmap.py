@@ -91,9 +91,18 @@ base_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_H
 # Import the dictionary with the lipoproteins
 with open(f'{base_path}/candidates_clusters_pangenome.pickle', 'rb') as f:
     cluster_dict = pickle.load(f)
+# Import the dictionary with the replacements
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/Camille_replacements.pickle', 'rb') as f:
+    replacements = pickle.load(f)
+
+# Replace lineage1 and lineage2 names based on the replacements dictionary
+lineage1 = [replacements.get(name, name) for name in lineage1]
+lineage2 = [replacements.get(name, name) for name in lineage2]
 
 #%% Create the binary matrix
 binary_matrix = pd.read_csv(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix.csv', index_col=0)
+# Replace column names based on the replacements dictionary
+binary_matrix.columns = binary_matrix.columns.map(lambda x: replacements.get(x, x))
 row_means = binary_matrix.mean(axis=1)
 binary_matrix = binary_matrix.loc[~(row_means > 0.95)]
 # Reorganize columns to put lineage1 first and then lineage2
@@ -113,6 +122,21 @@ lineage_colors = {
 col_colors = binary_matrix.columns.to_series().map(
     lambda x: lineage_colors["lineage1"] if x in lineage1 else lineage_colors["lineage2"]
 )
+#%% Alternative to colour all as one single group - Virulence genes
+cluster_colors = {
+    "Virulence_genes": "#3411bf",
+    "non_cluster": "#ff5733"
+}
+
+row_colors = binary_matrix.index.to_series().map(
+    lambda x: (
+        cluster_colors["Virulence_genes"] if x in cluster_dict.get('Virulence', []) else
+        cluster_colors["non_cluster"]
+    )
+)
+
+#%% Alternative to colour different clusters
+# Create a color palette for the clusters
 # Colour gene clusters for Cas9 protein, Motility genes, and Lipoproteins
 cluster_colors = {
     "Cas9 protein": "#d62728",
