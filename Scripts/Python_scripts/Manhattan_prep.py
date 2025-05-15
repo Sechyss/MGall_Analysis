@@ -5,8 +5,8 @@ import os
 os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/GWAS/')
 
 # Input and output file paths
-input_file = "mortality_SNPs.txt"
-output_file = "mortality_manhattan.txt"
+input_file = "swelling_SNPs.txt"
+output_file = "swelling_manhattan.txt"
 
 # Function to extract chromosome and position from variant ID
 def parse_variant(variant):
