@@ -175,7 +175,6 @@ def create_manhattan_plot(manhattan_data, gff_file, output_file='manhattan_plot.
 
     plt.xlabel('Position (bp)')
     plt.ylabel('-log10(p-value)')
-    plt.title('Manhattan Plot with Gene Annotations')
     plt.legend(loc='upper left')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()

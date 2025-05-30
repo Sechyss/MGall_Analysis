@@ -27,7 +27,7 @@ data_lineages_inverted = data_lineages.iloc[::-1].reset_index(drop=True)
 combined_df = pd.concat([data_lineages_inverted, data], axis=1)
 
 # Select the lineages to plot
-lineages_to_plot = [col for col in combined_df.columns if 'percentage' in col]
+lineages_to_plot = [col for col in combined_df.columns if 'Group' in col]
 
 # Open data from R in the format RData
 results = pyreadr.read_r('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Re_data/lineages_data.RData')
