@@ -13,25 +13,23 @@ from ete3 import Tree
 
 
 #%%
-os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/')
 
-snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
-snps_sra = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/All_mutation_matrix.xlsx', index_col=0, sheet_name='Sheet1', engine='openpyxl')
+HF_all = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/GWAS/All_mutations_matrix.csv', index_col=0)
 
 lucy_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb'))
 sra_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/SRA_replacements.pickle', 'rb'))
 
-snps_lucy['Sample'] = snps_lucy['Sample'].replace(lucy_replacement)
-snps_sra['Sample'] = snps_sra['Sample'].replace(sra_replacement)
+HF_all['Sample'] = HF_all['Sample'].replace(lucy_replacement)
+HF_all['Sample'] = HF_all['Sample'].replace(sra_replacement)
 
-all_snps = pd.concat([snps_lucy, snps_sra], axis=0)
 
-non_synonymous = all_snps[all_snps['Effect'].str.contains('STOP') |(all_snps['Effect'].str.contains('NON_SYNONYMOUS')) | (all_snps['Effect'].str.contains('LOST'))]
+non_synonymous = HF_all[HF_all['Effect'].str.contains('STOP') |(HF_all['Effect'].str.contains('NON_SYNONYMOUS')) | (HF_all['Effect'].str.contains('LOST'))]
 
 
 #%% Lineages
 
-lineage2 = ['S11_1994',
+lineage2 = [
 'A090809_2009',
 'G_2015',
 'L_2015',
@@ -93,12 +91,11 @@ lineage2 = ['S11_1994',
 'MG26_AL_11_2011',
 'A018_2011',
 'MG30_AL_11_2011',
-'VA94_7994-1-7P',
-'NC96_1596-4-2P',
 'NC08_2008.031-4-3P',
-'NC06_2006.080-5-2P']
+'NC06_2006.080-5-2P'
+            ]
 
-tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_highburnin.finaltree.nwk')
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_combined.finaltree.newick')
 leaves = tree_file.get_leaves()
 
 lineage1 = [leaf.name.replace("'", "") for leaf in leaves if leaf.name.replace("'", "") not in lineage2]
@@ -108,14 +105,14 @@ lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem 
 lineage_dict = {'Lineage1': lineage1, 'Lineage2': lineage2}
 
 # Save filtered versions of all_snps and non_synonymous matrices for both lineages combined
-all_snps_combined = all_snps[all_snps['Sample'].isin(lineage1 + lineage2)]
+all_snps_combined = HF_all[HF_all['Sample'].isin(lineage1 + lineage2)]
 non_synonymous_combined = non_synonymous[non_synonymous['Sample'].isin(lineage1 + lineage2)]
 
 all_snps_combined.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/All_snps_sra_lucy_annotated.csv', index=False)
 non_synonymous_combined.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/non_synonymous_snps_sra_lucy_annotated.csv', index=False)
 
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/lineage_dict.pickle', 'bw') as file:
-    pickle.dump(lineage_dict, file)
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/lineage_dict.pickle', 'bw') as handle:
+    pickle.dump(lineage_dict, handle)
 
 lineage_1_snps = non_synonymous[non_synonymous['Sample'].isin(lineage1)]
 lineage_2_snps = non_synonymous[non_synonymous['Sample'].isin(lineage2)]
@@ -126,7 +123,7 @@ unique_to_lineage2 = lineage_2_snps[~lineage_2_snps['Position'].isin(lineage_1_s
 #%% Genes
 
 def fastafile_creation(fasta_file, list_genes, reference_file):
-    with open(fasta_file, 'a') as handle:
+    with open(fasta_file, 'a') as outputfile:
         for genome in SeqIO.parse(reference_file, 'genbank'):
             for feature in genome.features:
                 if feature.type == "CDS":  # Find CDS to collect the information
@@ -135,24 +132,24 @@ def fastafile_creation(fasta_file, list_genes, reference_file):
                         if "translation" in feature.qualifiers.keys():
                             aaseq = Seq(feature.qualifiers["translation"][0])
                             fasta_aa = SeqRecord(aaseq, locustag, description='')
-                            SeqIO.write(fasta_aa, handle, 'fasta')
+                            SeqIO.write(fasta_aa, outputfile, 'fasta')
 
 
-genes_affected_l1 = set(lineage_1_snps['Gene_ID'].to_list())
-genes_affected_l2 = set(lineage_2_snps['Gene_ID'].to_list())
+genes_affected_l1 = set(unique_to_lineage1['Gene_ID'].to_list())
+genes_affected_l2 = set(unique_to_lineage2['Gene_ID'].to_list())
 
-fastafile_creation('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/Different_lineages_VA94_Genes_snps_l1.faa',
-genes_affected_l1, '/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCA_000286675.1/genomic.gbff')
+fastafile_creation('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/Different_lineages_VA94_Genes_unique_snps_l2.faa',
+genes_affected_l2, '/home/albertotr/OneDrive/Data/MGall_NCBI/ncbi_dataset/data/GCA_000286675.1/genomic.gbff')
 
 #%% COG analysis
 
 # Remove all the top part of the excel files
 #Load the COG dictionary and the hits
-cog_dict = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/lineage_differences/'
+cog_dict = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/'
                          'COG_dict.xlsx', engine='openpyxl', sheet_name='Sheet1', header=None)
-cog_hits_1 = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/lineage_differences/'
+cog_hits_1 = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/'
                          'Lineage1_EGGNOG-mapped.xlsx', engine='openpyxl', sheet_name='Sheet1')
-cog_hits_2 = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/lineage_differences/'
+cog_hits_2 = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/'
                          'Lineage2_EGGNOG-mapped.xlsx', engine='openpyxl', sheet_name='Sheet1')
 
 # Create a dictionary from the first and second columns
@@ -192,15 +189,15 @@ all_keys = set(data_histogram.keys()).union(set(data_histogram_2.keys()))
 combined_df = pd.DataFrame(all_keys, columns=['COG_function'])
 
 # Populate the DataFrame with counts from both dictionaries
-combined_df['Lineage1'] = combined_df['COG_function'].map(data_histogram).fillna(0).astype(int)
-combined_df['Lineage2'] = combined_df['COG_function'].map(data_histogram_2).fillna(0).astype(int)
+combined_df['Group 1'] = combined_df['COG_function'].map(data_histogram).fillna(0).astype(int)
+combined_df['Group 2'] = combined_df['COG_function'].map(data_histogram_2).fillna(0).astype(int)
 
 # Normalize the counts to percentages
-total_count_1 = combined_df['Lineage1'].sum()
-total_count_2 = combined_df['Lineage2'].sum()
+total_count_1 = combined_df['Group 1'].sum()
+total_count_2 = combined_df['Group 2'].sum()
 
-combined_df['Lineage1'] = (combined_df['Lineage1'] / total_count_1) * 100
-combined_df['Lineage2'] = (combined_df['Lineage2'] / total_count_2) * 100
+combined_df['Group 1'] = (combined_df['Group 1'] / total_count_1) * 100
+combined_df['Group 2'] = (combined_df['Group 2'] / total_count_2) * 100
 
 # Ensure the COG_function column is of type string
 combined_df['COG_function'] = combined_df['COG_function'].astype(str)
@@ -208,17 +205,17 @@ combined_df['COG_function'] = combined_df['COG_function'].astype(str)
 
 #%% Plotting
 # Melt the DataFrame to long format for seaborn
-melted_df = combined_df.melt(id_vars='COG_function', value_vars=['Lineage1', 'Lineage2'], var_name='Count_Type', value_name='Count')
+melted_df = combined_df.melt(id_vars='COG_function', value_vars=['Group 1', 'Group 2'], var_name='Groups', value_name='Count')
 
 # Define a custom color palette for each group
 palette = {
-    'Lineage1': 'skyblue',
-    'Lineage2': 'lightgreen'
+    'Group 1': "#1f77b4",
+    'Group 2': "#ff7f0e"
 }
 
 # Create the bar plot with the custom color palette
 plt.figure(figsize=(10, 6))  # Adjust the figure size
-sns.barplot(x='COG_function', y='Count', hue='Count_Type', data=melted_df, palette=palette)
+sns.barplot(x='COG_function', y='Count', hue='Groups', data=melted_df, palette=palette)
 plt.xticks(fontsize=6, fontweight='bold', rotation='vertical')
 plt.yticks(fontweight='bold')
 
@@ -229,5 +226,5 @@ plt.ylabel('Relative Frequency (%)')
 # Adjust the bottom margin
 plt.gcf().subplots_adjust(bottom=0.3)
 plt.tight_layout()
-plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_filtered/Lineage_differences/COG_function_combined.png', dpi=600)
+plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/COG_function_combined.png', dpi=600)
 plt.show()

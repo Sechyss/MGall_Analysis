@@ -108,18 +108,16 @@ lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem 
 lucy_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_replacements.pickle', 'rb'))
 sra_replacement = pickle.load(open('/home/albertotr/OneDrive/Data/Cambridge_Project/SRA_replacements.pickle', 'rb'))
 #%% Load the data and the lineages
-snps_lucy = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_VA94_7994_1_7P/All_mutations_matrix.csv', index_col=0)
-snps_sra = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/All_mutation_matrix.xlsx', index_col=0, sheet_name='Sheet1', engine='openpyxl')
 
-snps_lucy['Sample'] = snps_lucy['Sample'].replace(lucy_replacement)
-snps_sra['Sample'] = snps_sra['Sample'].replace(sra_replacement)
+HF_all = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/GWAS/All_mutations_matrix.csv', index_col=0)
 
-all_snps = pd.concat([snps_lucy, snps_sra], axis=0)
+HF_all['Sample'] = HF_all['Sample'].replace(lucy_replacement)
+HF_all['Sample'] = HF_all['Sample'].replace(sra_replacement)
 
-non_synonymous = all_snps[all_snps['Effect'].str.contains('STOP') |(all_snps['Effect'].str.contains('NON_SYNONYMOUS')) | (all_snps['Effect'].str.contains('LOST'))]
+non_synonymous = HF_all[HF_all['Effect'].str.contains('STOP') |(HF_all['Effect'].str.contains('NON_SYNONYMOUS')) | (HF_all['Effect'].str.contains('LOST'))]
 
-lineage_1_snps = all_snps[all_snps['Sample'].isin(lineage1)]
-lineage_2_snps = all_snps[all_snps['Sample'].isin(lineage2)]
+lineage_1_snps = non_synonymous[non_synonymous['Sample'].isin(lineage1)]
+lineage_2_snps = non_synonymous[non_synonymous['Sample'].isin(lineage2)]
 
 unique_to_lineage1 = lineage_1_snps[~lineage_1_snps['Position'].isin(lineage_2_snps['Position'])]
 unique_to_lineage2 = lineage_2_snps[~lineage_2_snps['Position'].isin(lineage_1_snps['Position'])]
@@ -133,11 +131,11 @@ filtered_df = lineage_2_snps[lineage_2_snps['Gene_ID'].isin(unique_genes_lineage
 #%% Venn diagram to show overlapping snps between lineages
 
 sets = {
-    'Lineage1_genes': {x for x in genes_affected_l1 if not (isinstance(x, float) and math.isnan(x))},
-    'Lineage2_genes': {x for x in genes_affected_l2 if not (isinstance(x, float) and math.isnan(x))},
+    'Group 1 genes': {x for x in genes_affected_l1 if not (isinstance(x, float) and math.isnan(x))},
+    'Group 2 genes': {x for x in genes_affected_l2 if not (isinstance(x, float) and math.isnan(x))},
 }
 
-venny4py(sets=sets, out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png',dpi=600)
+venny4py(sets=sets, colors=('#1f77b4', '#ff7f0e'), out='/home/albertotr/OneDrive/Data/Cambridge_Project/pangenome_results_HF/Lineage_differences/Different_lineages_VA94_Genes_snps_Venn.png',dpi=600)
 
 #%% Compare presence-absence of genes from the pangenome
 
