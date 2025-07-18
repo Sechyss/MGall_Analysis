@@ -1,3 +1,4 @@
+#%%
 import os
 
 from tqdm import tqdm
@@ -35,7 +36,7 @@ collector_dict_filtered = {key: value for key, value in collector_dict.items() i
 collection_vcf = pd.DataFrame(columns=['Sample', 'Reference', 'Alternative', 'Position', 'Effect'])
 
 # Process VCF files
-os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/SnpEff_results_virginia/')
+os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/GWAS/HF_vcf/SnpEff_HF/')
 for file in tqdm(os.listdir()):
     if file.endswith('.vcf'):
         vcf_reader = pysam.VariantFile(file, 'r')
