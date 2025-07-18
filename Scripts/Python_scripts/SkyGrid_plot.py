@@ -67,7 +67,7 @@ plt.xlim(left=1991, right=time.max())
 plt.ylim(bottom=0)
 plt.tight_layout()
 
-plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/Skygrid_Lineages_throughtime_per.png', dpi=600)
+#plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/Skygrid_Lineages_throughtime_per.png', dpi=600)
 
 # Show the plot
 plt.show()
