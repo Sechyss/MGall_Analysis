@@ -2,7 +2,7 @@
 import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
-import pickle
+from ete3 import Tree
 
 
 def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
@@ -34,114 +34,82 @@ def fastafile_creation(fasta_file, list_genes, reference_file):
                     SeqIO.write(seq_record_2, f1, 'fasta')
 
 Presence_absence = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/'
-                               'pangenome_results_filtered/gene_presence_absence.csv')
-
-#%% Set up the data
-
-key_data = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx',
-                         sheet_name='Metadata_Keys')
-key_data['Sample Name'] = key_data['Sample Name'].replace(
-    {'/': '_', ' ': '_', '\\.': '_', '-': '_', '\(': '_', '\)': ''}
-    , regex=True)
-
-housefinch_all = list(key_data[key_data['Host'].isin(['Haemorhous mexicanus', 'House finch'])]['Sample Name'])
-poultry_all = list(key_data[~key_data['Sample Name'].isin(housefinch_all)]['Sample Name'])
-
-housefinch_pre2007 = list(
-    key_data[(key_data['Host'].isin(['Haemorhous mexicanus', 'House finch'])) & (key_data['Date'] < 2007)][
-        'Sample Name'])
-housefinch_post2007 = list(
-    key_data[(key_data['Host'].isin(['Haemorhous mexicanus', 'House finch'])) & (key_data['Date'] >= 2007)][
-        'Sample Name'])
-
-poultry_pre2007 = list(
-    key_data[(~key_data['Host'].isin(['Haemorhous mexicanus', 'House finch'])) & (key_data['Date'] < 2007)][
-        'Sample Name'])
-poultry_post2007 = list(
-    key_data[(~key_data['Host'].isin(['Haemorhous mexicanus', 'House finch'])) & (key_data['Date'] >= 2007)][
-        'Sample Name'])
-
-filtering_dict = {'Poultry_all': poultry_all, 'Poultry_pre2007': poultry_pre2007, 'Poultry_post2007': poultry_post2007,
-                  'Housefinch_all': housefinch_all, 'Housefinch_post2007': housefinch_post2007,
-                  'Housefinch_pre2007': housefinch_pre2007}
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/filtering_dict.pickle', 'wb') as handle:
-    pickle.dump(filtering_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-#%% Filter the relevant sample columns for house finch and poultry
-
-filtered_genes, filtered_genes_2 = filter_presence_absence(Presence_absence, housefinch_all, poultry_all, 0.9, 0.1)
-
-#%% Testing pre and post 2007
-
-filtered_genes_pre2007, filtered_genes_post2007 = filter_presence_absence(Presence_absence, housefinch_pre2007,
-                                                                          housefinch_post2007, 0.15, 0)
-
-#%% Differences between poultry and early house finch and poultry
-
-filtered_genes_early_HF, filtered_genes_poultry = filter_presence_absence(Presence_absence, housefinch_pre2007,
-                                                                          poultry_pre2007, 0.15, 0)
+                               'pangenome_results_HF/gene_presence_absence_filt_pseudo_length_frag.csv')
 
 #%% Analysis presence/absence
+lineage2 = [
+'A090809_2009',
+'G_2015',
+'L_2015',
+'J_2015',
+'A01546_2007',
+'A01505_2007',
+'A01510_2007',
+'A565_2002',
+'A2261_2000',
+'A506_2002',
+'A454_2001',
+'A442_2001',
+'A471_2001',
+'A267_2000',
+'A3611_2001',
+'A509_2002',
+'A277_2001',
+'BP421_2002',
+'A933_2001',
+'A297_2001',
+'A371_2001',
+'A877_2003',
+'MG31_AL_11_2011',
+'A020_2011',
+'OY79_2013',
+'WU47_2013',
+'A_2015',
+'Q_2015',
+'Black_2012',
+'GW77_2013',
+'E054_2013',
+'KB64_2013',
+'A1_2014',
+'MG27_AL_11_2011',
+'A046_2011',
+'A3278_2012',
+'A3240_2012',
+'A3244_2012',
+'A3225_2012',
+'A2486_2012',
+'A304_2003',
+'A195_2003',
+'A012_2011',
+'MG28_AL_11_2011',
+'A044_2011',
+'A001_2011',
+'MG22_AL_11_2011',
+'A004_2011',
+'A3316_2012',
+'Blue_2012',
+'A021_2011',
+'MG23_AL_11_2011',
+'A006_2011',
+'MG25_AL_11_2011',
+'MG32_AL_11_2011',
+'AMGO_2011',
+'MG29_AL_11_2011',
+'A013_2011',
+'MG26_AL_11_2011',
+'A018_2011',
+'MG30_AL_11_2011',
+'NC08_2008.031-4-3P',
+'NC06_2006.080-5-2P'
+            ]
 
-lineages_table = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold/'
-                             'mgall_60threshold_lineages.csv')
-lineages= dict(zip(lineages_table['id'], lineages_table['Rank_2_Lineage']))
-lineages_dict = {key.split('_')[0]: value for key, value in lineages.items()}
+tree_file = Tree('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/Final_Run/VA94_consensus_all_trimmed_60threshold_50_combined.finaltree.newick')
+leaves = tree_file.get_leaves()
 
-key_data = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Metadata_genomes.xlsx',
-                         sheet_name='Lucy_keys')
-translation_dict = dict(zip(key_data['Lnames'], key_data['trelabels']))
-translated_dict = {}
-for keys in translation_dict.keys():
-    newkey = lineages_dict[keys]
-    if newkey not in translated_dict.keys():
-        translated_dict[newkey] = [translation_dict[keys].replace('Sample_', '')]
-    else:
-        translated_dict[newkey].append(translation_dict[keys].replace('Sample_', ''))
+lineage1 = [leaf.name.replace("'", "") for leaf in leaves if leaf.name.replace("'", "") not in lineage2]
+lineage1 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage1]
+lineage2 = [elem.replace('_2011', '') if 'MG' in elem and '_AL_11_2011' in elem else elem for elem in lineage2]
 
-
-with open('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold/lineage_dict.pickle', 'wb') as handle:
-    pickle.dump(translated_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-lineage1 = set(translated_dict[1])
-lineage2 = set(translated_dict[2])
-
-
-
-#%% Lineages Rlow
-
-lineages_table_Rlow = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/mgall_60threshold/'
-                                  'mgall_60threshold_lineages.csv')
-lineages_Rlow= dict(zip(lineages_table_Rlow['id'], lineages_table_Rlow['Rank_2_Lineage']))
-lineages_dict_Rlow = {key.split('_')[0]: value for key, value in lineages_Rlow.items()}
-
-translated_dict_Rlow = {}
-for keys in translation_dict.keys():
-    newkey = lineages_dict_Rlow[keys]
-    if newkey not in translated_dict_Rlow.keys():
-        translated_dict_Rlow[newkey] = [translation_dict[keys].replace('Sample_', '')]
-    else:
-        translated_dict_Rlow[newkey].append(translation_dict[keys].replace('Sample_', ''))
-
-lineage1_Rlow = set(translated_dict_Rlow[1])
-lineage2_Rlow = set(translated_dict_Rlow[2])
-lineage3_Rlow = set(translated_dict_Rlow[3])
-
-lineage2_Rlow_relative = lineage2_Rlow.union(lineage3_Rlow)
-
-#%% Venn diagram of lineages
-from venny4py.venny4py import *
-
-sets = {
-    'Lineage1_Rlow': lineage1_Rlow,
-    'Lineage2_Rlow': lineage2_Rlow_relative,
-    'Lineage1_VA94': lineage1,
-    'Lineage2_VA94': lineage2
-}
-
-venny4py(sets=sets)
-
-plt.savefig('/home/albertotr/OneDrive/Data/Cambridge_Project/PopPUNK/Lineages_60threshold_venn.png', dpi=600)
 
 #%% filtering by lineage
 
