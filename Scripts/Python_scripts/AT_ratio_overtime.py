@@ -44,8 +44,16 @@ df = pd.merge(metadata, at_df, on='strain')
 plt.figure(figsize=(10, 6))
 sns.scatterplot(data=df, x='date', y='at_ratio', s=60)
 sns.regplot(data=df, x='date', y='at_ratio', scatter=False, color='red', ci=None)
-plt.xlabel("Collection Year")
-plt.ylabel("AT Ratio (A+T / Total)")
+plt.xlabel("Sample Year")
+plt.ylabel("AT Ratio")
 plt.tight_layout()
 plt.savefig(output_plot, dpi=600)
 plt.show()
+
+import statsmodels.api as sm
+
+X = df['date']
+y = df['at_ratio']
+X = sm.add_constant(X)
+model = sm.OLS(y, X).fit()
+print(model.summary())

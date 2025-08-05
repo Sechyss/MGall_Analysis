@@ -3,6 +3,7 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from ete3 import Tree
+import pickle
 
 
 def filter_presence_absence(dataframe, group1, group2, filter1, filter2):
@@ -35,6 +36,11 @@ def fastafile_creation(fasta_file, list_genes, reference_file):
 
 Presence_absence = pd.read_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/'
                                'pangenome_results_HF/gene_presence_absence_filt_pseudo_length_frag.csv')
+
+with open('/home/albertotr/OneDrive/Data/Cambridge_Project/Camille_replacements_foldername.pickle', 'rb') as handle:
+    Camille_replacements = pickle.load(handle)
+#%% Rename the columns of the dataframe
+Presence_absence.rename(columns=Camille_replacements, inplace=True)
 
 #%% Analysis presence/absence
 lineage2 = [
