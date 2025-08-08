@@ -130,4 +130,3 @@ for file in os.listdir(bam_dir):
                         df_pos = pd.concat([df_pos, row_to_add], ignore_index=True)
         bamfile.close()
 df_pos.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_Rlow/Only_SNPs/Test_pos.csv', index=False)
-del pileupread, pileupcolumn
