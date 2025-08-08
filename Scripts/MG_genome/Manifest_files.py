@@ -31,3 +31,7 @@ manifest_df.columns = [
     'library_strategy', 'library_layout', 'forward_file_name', 'forward_file_md5',
     'reverse_file_name', 'reverse_file_md5'
 ]
+
+manifest_df.index.name = 'sample'
+manifest_df.reset_index(inplace=True)
+manifest_df.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/MGall_Manifest.csv', index=False)
