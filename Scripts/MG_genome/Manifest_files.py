@@ -51,5 +51,6 @@ md5_dict = dict(zip(md5_values['MD5_file'], md5_values['value']))
 for col in ['forward_file_md5', 'reverse_file_md5']:
     old_df[col] = old_df[col].map(md5_dict).fillna(old_df[col])
 
+old_df.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/MGall_Manifest_with_MD5.csv', index=False)
 
 # %%
