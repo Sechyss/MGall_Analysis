@@ -1,9 +1,11 @@
+#%% Import packages
 import os
 import pandas as pd
 import pickle
 
 base = '/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_reads/Raw_reads/'
 
+#%%
 with open('/home/albertotr/OneDrive/Data/Cambridge_Project/Camille_replacements_foldername.pickle', 'rb') as handle:
     replacements = pickle.load(handle)
 
@@ -11,9 +13,9 @@ dictionary_manifest = {}
 for folder in os.listdir(base):
     if folder.startswith('Sample_'):
         name = folder.replace('Sample_', '')
-        new_name = replacements.get(name, name)  # Use .get() to avoid KeyError
+        new_name = replacements.get(name, name)
         folder_path = os.path.join(base, folder)
-        fastq_files = sorted([f for f in os.listdir(folder_path) if f.endswith('.fastq.gz')])
+        fastq_files = sorted([f for f in os.listdir(folder_path) if f.endswith('.fastq')])
         # Assume paired-end: first is forward, second is reverse
         if len(fastq_files) >= 2:
             forward_file, reverse_file = fastq_files[:2]
@@ -35,3 +37,19 @@ manifest_df.columns = [
 manifest_df.index.name = 'sample'
 manifest_df.reset_index(inplace=True)
 manifest_df.to_csv('/home/albertotr/OneDrive/Data/Cambridge_Project/MGall_Manifest.csv', index=False)
+
+#%% Replace MD5 with actual MD5 sums
+old_df = pd.read_table('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_reads/Raw_reads/fastq2_template_1756715460962.tsv', skiprows=1)
+
+#Dictionary
+md5_values = pd.read_excel('/home/albertotr/OneDrive/Data/Cambridge_Project/Lucy_reads/md5_values.xlsx', header=0, sheet_name='Sheet1')
+
+# Create MD5 dictionary: {filename: md5sum}
+md5_dict = dict(zip(md5_values['MD5_file'], md5_values['value']))
+
+# Replace MD5 file names in old_df with actual MD5 sums
+for col in ['forward_file_md5', 'reverse_file_md5']:
+    old_df[col] = old_df[col].map(md5_dict).fillna(old_df[col])
+
+
+# %%

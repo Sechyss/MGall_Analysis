@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+.vscode
+.idea
 .vscode/settings.json
 .idea/*
 MGall_R_analysis/Brownian_Alberto/Brownian_Alberto_original.R
