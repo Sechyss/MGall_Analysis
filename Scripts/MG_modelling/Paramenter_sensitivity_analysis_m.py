@@ -150,12 +150,15 @@ sns.set_theme(style="whitegrid")
 # Sort by absolute sensitivity for better visual order
 sens_df_sorted = sens_df.reindex(sens_df['sensitivity_index'].abs().sort_values(ascending=True).index)
 
+# Assign hue to y and set legend=False
 barplot = sns.barplot(
     x='sensitivity_index',
     y=sens_df_sorted.index,
+    hue=sens_df_sorted.index,
     data=sens_df_sorted,
     palette='viridis',
-    orient='h'
+    orient='h',
+    legend=False
 )
 
 # Add value labels to bars
