@@ -19,14 +19,14 @@ pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl])
 pop_values = pop_values / np.sum(pop_values)  # Normalize to proportions
 
 #%% Parameters
-theta = 0.3  # Initial proportion taking drug
+theta = 0.6  # Proportion of exposed who will eventually take the drug
 p_recover = 1.0  # Drug effect on recovery
 phi_transmission = 2.0  # High virulence transmission multiplier
 phi_recover = 0.75  # High virulence recovery reduction
 sigma = 1/7  # Recovery rate
 delta = 1/90  # Immunity loss rate
 tau = 1/5  # Progression from exposed to infectious
-kappa = 1/3  # Delay rate for drug uptake (~3 days)
+delta_d = 1/3  # Delay rate for starting drug (~3 days)
 
 birth_rate = 0.0
 death_rate = 0.0
@@ -35,7 +35,7 @@ beta_l = 0.5
 beta_h = phi_transmission * beta_l
 
 parameters = (birth_rate, death_rate, theta, p_recover, tau,
-              phi_recover, sigma, delta, beta_l, beta_h, kappa)
+              phi_recover, sigma, delta, beta_l, beta_h, delta_d)
 
 t = np.linspace(0, 365*1, 365*1)  # 1 year, daily resolution
 
@@ -47,10 +47,7 @@ def model(y, t, params):
 
     # Unpack parameters
     (birth_rate, death_rate, theta, p_recover, tau,
-     phi_recover, sigma, delta, beta_l, beta_h, kappa) = params
-
-    # Time-dependent drug uptake modifier
-    theta_t = 1 - np.exp(-kappa * t)
+     phi_recover, sigma, delta, beta_l, beta_h, delta_d) = params
 
     # Force of infection (proportions)
     B_h = beta_h * (Indh + Idh)
@@ -60,12 +57,18 @@ def model(y, t, params):
     dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl)
     dEhdt = B_h * S - tau * Eh
     dEldt = B_l * S - tau * El
-    dIdhdt = tau * theta_t * Eh - phi_recover * p_recover * sigma * Idh
-    dIdldt = tau * theta_t * El - p_recover * sigma * Idl
-    dIndhdt = tau * (1 - theta_t) * Eh - phi_recover * sigma * Indh
-    dIndldt = tau * (1 - theta_t) * El - sigma * Indl
-    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh) - delta * Rh
-    dRldt = sigma * (p_recover * Idl + Indl) - delta * Rl
+
+    # High virulence infected dynamics
+    dIndhdt = tau * Eh - delta_d * theta * Indh - phi_recover * sigma * Indh
+    dIdhdt = delta_d * theta * Indh - phi_recover * p_recover * sigma * Idh
+
+    # Low virulence infected dynamics
+    dIndldt = tau * El - delta_d * theta * Indl - sigma * Indl
+    dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl
+
+    # Recovery dynamics
+    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh
+    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl
 
     return dSdt, dEhdt, dIndhdt, dIdhdt, dRhdt, dEldt, dIndldt, dIdldt, dRldt
 
