@@ -2,6 +2,8 @@
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -57,21 +59,21 @@ def model(y, t, params):
     B_l = beta_l * (Indl + Idl)
 
     # Differential equations for each compartment
-    dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl)
-    dEhdt = B_h * S - tau * Eh
-    dEldt = B_l * S - tau * El
+    dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl) - death_rate * S
+    dEhdt = B_h * S - tau * Eh - death_rate * Eh
+    dEldt = B_l * S - tau * El - death_rate * El
 
     # High virulence infected
-    dIndhdt = tau * Eh - delta_d * theta * Indh - phi_recover * sigma * Indh
-    dIdhdt = delta_d * theta * Indh - phi_recover * p_recover * sigma * Idh
+    dIndhdt = tau * Eh - delta_d * theta * Indh - phi_recover * sigma * Indh - death_rate * Indh
+    dIdhdt = delta_d * theta * Indh - phi_recover * p_recover * sigma * Idh - death_rate * Idh
 
     # Low virulence infected
-    dIndldt = tau * El - delta_d * theta * Indl - sigma * Indl
-    dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl
+    dIndldt = tau * El - delta_d * theta * Indl - sigma * Indl - death_rate * Indl
+    dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl - death_rate * Idl
 
     # Recovery compartments
-    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh
-    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl
+    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh - death_rate * Rh
+    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl - death_rate * Rl
 
     return dSdt, dEhdt, dIndhdt, dIdhdt, dRhdt, dEldt, dIndldt, dIdldt, dRldt
 
