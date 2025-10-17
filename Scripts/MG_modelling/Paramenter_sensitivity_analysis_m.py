@@ -2,8 +2,6 @@
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -27,7 +25,7 @@ pop_values = pop_values / np.sum(pop_values)
 # Define model parameters
 theta = 0.6  # Proportion of exposed who will eventually take the drug
 p_recover = 1.0  # Drug effect on recovery
-phi_transmission = 2.0  # High virulence transmission multiplier
+phi_transmission = 1.3  # High virulence transmission multiplier
 phi_recover = 0.75  # High virulence recovery reduction
 sigma = 1/7  # Recovery rate
 delta = 1/90  # Immunity loss rate
@@ -55,8 +53,8 @@ def model(y, t, params):
      phi_recover, sigma, delta, beta_l, beta_h, delta_d) = params
 
     # Calculate force of infection for high and low virulence
-    B_h = beta_h * Indh
-    B_l = beta_l * (Indl + Idl)
+    B_h = beta_h * (Indh + Idh)
+    B_l = beta_l * Indl
 
     # Differential equations for each compartment
     dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl) - death_rate * S

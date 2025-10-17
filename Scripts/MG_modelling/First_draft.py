@@ -50,8 +50,8 @@ def model(y, t, params):
      phi_recover, sigma, delta, beta_l, beta_h, delta_d) = params
 
     # Force of infection (proportions)
-    B_h = beta_h * Indh 
-    B_l = beta_l * (Indl + Idl)
+    B_h = beta_h * (Indh + Idh)
+    B_l = beta_l * Indl
 
     # Differential equations
     dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl)
