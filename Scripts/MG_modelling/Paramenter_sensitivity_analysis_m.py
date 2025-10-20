@@ -5,6 +5,8 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+np.random.seed(42)
+
 #%% Initial Conditions (Proportions)
 # Set initial population values for each compartment
 S = 10000
@@ -33,12 +35,12 @@ tau = 1/5  # Progression from exposed to infectious
 delta_d = 1/3  # Delay rate for starting drug (~3 days)
 birth_rate = 0.0
 death_rate = 0.0
-beta_l = 0.5
-beta_h = phi_transmission * beta_l
+beta_l = 0.1
+
 
 # Pack parameters into a tuple
-parameters = (birth_rate, death_rate, theta, p_recover, tau,
-              phi_recover, sigma, delta, beta_l, beta_h, delta_d)
+parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
+     phi_recover, phi_transmission, sigma, tau, theta)
 
 # Time vector: 1 year, daily resolution
 t = np.linspace(0, 365*1, 365*1)
@@ -49,9 +51,11 @@ def model(y, t, params):
     y = [max(0, val) for val in y]
     S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl = y
 
-    (birth_rate, death_rate, theta, p_recover, tau,
-     phi_recover, sigma, delta, beta_l, beta_h, delta_d) = params
+    (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
+     phi_recover, phi_transmission, sigma, tau, theta) = params
 
+    
+    beta_h = phi_transmission * beta_l
     # Calculate force of infection for high and low virulence
     B_h = beta_h * (Indh + Idh)
     B_l = beta_l * Indl
@@ -98,10 +102,17 @@ def run_model(param_dict):
     """Run the ODE model with the given parameter dictionary."""
     # Unpack parameters from dictionary and run the model
     params = (
-        param_dict['birth_rate'], param_dict['death_rate'], param_dict['theta'],
-        param_dict['p_recover'], param_dict['tau'], param_dict['phi_recover'],
-        param_dict['sigma'], param_dict['delta'], param_dict['beta_l'],
-        param_dict['beta_h'], param_dict['delta_d']
+        param_dict['beta_l'],
+        param_dict['birth_rate'],
+        param_dict['death_rate'],
+        param_dict['delta'],
+        param_dict['delta_d'],
+        param_dict['p_recover'],
+        param_dict['phi_recover'],
+        param_dict['phi_transmission'],
+        param_dict['sigma'],
+        param_dict['tau'],
+        param_dict['theta']
     )
     sol = odeint(model, pop_values, t, args=(params,))
     df = pd.DataFrame(sol, columns=columns)
@@ -109,9 +120,17 @@ def run_model(param_dict):
 
 # Baseline parameters as dictionary
 baseline = {
-    'birth_rate': 0.0, 'death_rate': 0.0, 'theta': 0.6, 'p_recover': 1.0, 'tau': 1/5,
-    'phi_recover': 0.75, 'sigma': 1/7, 'delta': 1/90, 'beta_l': 0.5,
-    'beta_h': 2.0 * 0.5, 'delta_d': 1/3
+    'beta_l': 0.1,
+    'birth_rate': 0.0,
+    'death_rate': 0.0,
+    'delta': 1/90,
+    'delta_d': 1/3,
+    'p_recover': 1,
+    'phi_recover': 0.75,
+    'phi_transmission': 1.5,
+    'sigma': 1/7,
+    'tau': 1/5,
+    'theta': 0.5
 }
 
 def sensitivity_analysis(param_dict, variation=0.1):
@@ -143,37 +162,29 @@ print(sens_df[['baseline', 'low', 'high', 'sensitivity_index']])
 
 # Plot sensitivity results as a horizontal bar chart (beautified)
 
-
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(8, 6))
 sns.set_theme(style="whitegrid")
 
-# Sort by absolute sensitivity for better visual order
-sens_df_sorted = sens_df.reindex(sens_df['sensitivity_index'].abs().sort_values(ascending=True).index)
+# Sort parameters by absolute sensitivity (descending)
+sens_sorted = sens_df.sort_values(by='sensitivity_index', key=np.abs, ascending=False)
 
-# Assign hue to y and set legend=False
-barplot = sns.barplot(
-    x='sensitivity_index',
-    y=sens_df_sorted.index,
-    hue=sens_df_sorted.index,
-    data=sens_df_sorted,
-    palette='viridis',
-    orient='h',
-    legend=False
+# Plot horizontal bars centered at zero
+plt.barh(
+    sens_sorted.index,
+    sens_sorted['sensitivity_index'],
+    color=sns.color_palette('coolwarm', len(sens_sorted)),
+    edgecolor='black'
 )
 
-# Add value labels to bars
-for i, (value, param) in enumerate(zip(sens_df_sorted['sensitivity_index'], sens_df_sorted.index)):
-    plt.text(
-        value + 0.01 * np.sign(value),  # Offset label slightly from bar
-        i,
-        f"{value:.2f}",
-        va='center',
-        ha='left' if value >= 0 else 'right',
-        fontsize=10
-    )
+plt.axvline(0, color='black', lw=1)
+plt.xlabel('Sensitivity Index (Effect on Peak Infection)', fontsize=13)
+plt.ylabel('Parameter', fontsize=13)
+plt.title('Tornado Plot of Parameter Sensitivity', fontsize=15, weight='bold')
 
-plt.xlabel('Sensitivity Index', fontsize=14)
-plt.ylabel('Parameter', fontsize=14)
-plt.title('Parameter Sensitivity on Peak Infections', fontsize=16, weight='bold')
+# Annotate values
+for i, (idx, val) in enumerate(zip(sens_sorted.index, sens_sorted['sensitivity_index'])):
+    plt.text(val + np.sign(val)*0.01, i, f"{val:.2f}", va='center',
+             ha='left' if val >= 0 else 'right', fontsize=10)
+
 plt.tight_layout()
 plt.show()

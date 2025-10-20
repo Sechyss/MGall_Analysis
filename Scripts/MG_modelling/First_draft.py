@@ -4,6 +4,8 @@ import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
+np.random.seed(42)
+
 #%% Initial Conditions (Proportions)
 S = 10000
 Eh = 0
@@ -19,67 +21,69 @@ pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl])
 pop_values = pop_values / np.sum(pop_values)  # Normalize to proportions
 
 #%% Parameters
-theta = 0.6  # Proportion of exposed who will eventually take the drug
+# Define model parameters
+theta = 0.3  # Proportion of exposed who will eventually take the drug
 p_recover = 1.0  # Drug effect on recovery
-phi_transmission = 2.0  # High virulence transmission multiplier
+phi_transmission = 1.3  # High virulence transmission multiplier
 phi_recover = 0.75  # High virulence recovery reduction
 sigma = 1/7  # Recovery rate
 delta = 1/90  # Immunity loss rate
 tau = 1/5  # Progression from exposed to infectious
 delta_d = 1/3  # Delay rate for starting drug (~3 days)
-
 birth_rate = 0.0
 death_rate = 0.0
+beta_l = 0.1
 
-beta_l = 0.5
-beta_h = phi_transmission * beta_l
 
-parameters = (birth_rate, death_rate, theta, p_recover, tau,
-              phi_recover, sigma, delta, beta_l, beta_h, delta_d)
+# Pack parameters into a tuple
+parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
+     phi_recover, phi_transmission, sigma, tau, theta)
 
-t = np.linspace(0, 365*1, 365*1)  # 1 year, daily resolution
+# Time vector: 1 year, daily resolution
+t = np.linspace(0, 365*1, 365*1)
 
 #%% ODE Model
 def model(y, t, params):
-    # Prevent negative values
+    # Prevent negative values in compartments
     y = [max(0, val) for val in y]
     S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl = y
 
-    # Unpack parameters
-    (birth_rate, death_rate, theta, p_recover, tau,
-     phi_recover, sigma, delta, beta_l, beta_h, delta_d) = params
+    (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
+     phi_recover, phi_transmission, sigma, tau, theta) = params
 
-    # Force of infection (proportions)
+    
+    beta_h = phi_transmission * beta_l
+    # Calculate force of infection for high and low virulence
     B_h = beta_h * (Indh + Idh)
     B_l = beta_l * Indl
 
-    # Differential equations
-    dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl)
-    dEhdt = B_h * S - tau * Eh
-    dEldt = B_l * S - tau * El
+    # Differential equations for each compartment
+    dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl) - death_rate * S
+    dEhdt = B_h * S - tau * Eh - death_rate * Eh
+    dEldt = B_l * S - tau * El - death_rate * El
 
-    # High virulence infected dynamics
-    dIndhdt = tau * Eh - delta_d * theta * Indh - phi_recover * sigma * Indh
-    dIdhdt = delta_d * theta * Indh - phi_recover * p_recover * sigma * Idh
+    # High virulence infected
+    dIndhdt = tau * Eh - delta_d * theta * Indh - phi_recover * sigma * Indh - death_rate * Indh
+    dIdhdt = delta_d * theta * Indh - phi_recover * p_recover * sigma * Idh - death_rate * Idh
 
-    # Low virulence infected dynamics
-    dIndldt = tau * El - delta_d * theta * Indl - sigma * Indl
-    dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl
+    # Low virulence infected
+    dIndldt = tau * El - delta_d * theta * Indl - sigma * Indl - death_rate * Indl
+    dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl - death_rate * Idl
 
-    # Recovery dynamics
-    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh
-    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl
+    # Recovery compartments
+    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh - death_rate * Rh
+    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl - death_rate * Rl
 
     return dSdt, dEhdt, dIndhdt, dIdhdt, dRhdt, dEldt, dIndldt, dIdldt, dRldt
 
 #%% Solve ODEs
+# Integrate the ODE system
 solution = odeint(model, pop_values, t, args=(parameters,))
 
-#%% Collect results
+# Create DataFrame for results
 columns = ['Susceptible', 'Exposed_High', 'Infected_NotDrug_High', 'Infected_Drug_High', 'Recovered_High',
            'Exposed_Low', 'Infected_NotDrug_Low', 'Infected_Drug_Low', 'Recovered_Low']
 results = pd.DataFrame(solution, columns=columns)
-
 Sdt, Ehdt, Indhdt, Idhdt, Rhdt, Eldt, Indldt, Idldt, Rldt = solution.T
 
 #%% Plotting
@@ -101,5 +105,5 @@ ax.xaxis.set_tick_params(length=0)
 legend = ax.legend()
 legend.get_frame().set_alpha(0.5)
 plt.tight_layout()
-plt.savefig('first_draft_model.png', dpi=300)
+plt.savefig('first_draft_model.png', dpi=600)
 plt.show()
