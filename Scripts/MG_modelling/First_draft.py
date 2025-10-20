@@ -71,8 +71,8 @@ def model(y, t, params):
     dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl - death_rate * Idl
 
     # Recovery compartments
-    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh - death_rate * Rh
-    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl - death_rate * Rl
+    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh) - delta * Rh - death_rate * Rh
+    dRldt = sigma * (p_recover * Idl + Indl) - delta * Rl - death_rate * Rl
 
     return dSdt, dEhdt, dIndhdt, dIdhdt, dRhdt, dEldt, dIndldt, dIdldt, dRldt
 

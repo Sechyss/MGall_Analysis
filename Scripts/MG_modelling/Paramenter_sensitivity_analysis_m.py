@@ -25,17 +25,17 @@ pop_values = pop_values / np.sum(pop_values)
 
 #%% Parameters
 # Define model parameters
-theta = 0.6  # Proportion of exposed who will eventually take the drug
-p_recover = 1.0  # Drug effect on recovery
+theta = 0.3  # Proportion of exposed who will eventually take the drug
+p_recover = 0.5  # Drug effect on recovery
 phi_transmission = 1.3  # High virulence transmission multiplier
 phi_recover = 0.75  # High virulence recovery reduction
-sigma = 1/7  # Recovery rate
+sigma = 1/10  # Recovery rate
 delta = 1/90  # Immunity loss rate
-tau = 1/5  # Progression from exposed to infectious
+tau = 1/3  # Progression from exposed to infectious
 delta_d = 1/3  # Delay rate for starting drug (~3 days)
 birth_rate = 0.0
 death_rate = 0.0
-beta_l = 0.1
+beta_l = 0.25
 
 
 # Pack parameters into a tuple
@@ -74,8 +74,8 @@ def model(y, t, params):
     dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl - death_rate * Idl
 
     # Recovery compartments
-    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh * (1 - theta)) - delta * Rh - death_rate * Rh
-    dRldt = sigma * (p_recover * Idl + Indl * (1 - theta)) - delta * Rl - death_rate * Rl
+    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh) - delta * Rh - death_rate * Rh
+    dRldt = sigma * (p_recover * Idl + Indl) - delta * Rl - death_rate * Rl
 
     return dSdt, dEhdt, dIndhdt, dIdhdt, dRhdt, dEldt, dIndldt, dIdldt, dRldt
 
@@ -120,17 +120,17 @@ def run_model(param_dict):
 
 # Baseline parameters as dictionary
 baseline = {
-    'beta_l': 0.1,
+    'beta_l': 0.25,
     'birth_rate': 0.0,
     'death_rate': 0.0,
     'delta': 1/90,
     'delta_d': 1/3,
-    'p_recover': 1,
+    'p_recover': 0.5,
     'phi_recover': 0.75,
     'phi_transmission': 1.5,
-    'sigma': 1/7,
-    'tau': 1/5,
-    'theta': 0.5
+    'sigma': 1/10,
+    'tau': 1/3,
+    'theta': 0.3
 }
 
 def sensitivity_analysis(param_dict, variation=0.1):
@@ -187,4 +187,7 @@ for i, (idx, val) in enumerate(zip(sens_sorted.index, sens_sorted['sensitivity_i
              ha='left' if val >= 0 else 'right', fontsize=10)
 
 plt.tight_layout()
+plt.savefig('sensitivity_tornado_plot.png', dpi=300)
 plt.show()
+
+# %%
