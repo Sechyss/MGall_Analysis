@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import seaborn as sns
+from Models import SEIRS_first_model
 
 np.random.seed(42)
 
@@ -45,43 +46,9 @@ parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
 # Time vector: 1 year, daily resolution
 t = np.linspace(0, 365*1, 365*1)
 
-#%% ODE Model
-def model(y, t, params):
-    # Prevent negative values in compartments
-    y = [max(0, val) for val in y]
-    S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl = y
-
-    (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
-     phi_recover, phi_transmission, sigma, tau, theta) = params
-
-    
-    beta_h = phi_transmission * beta_l
-    # Calculate force of infection for high and low virulence
-    B_h = beta_h * (Indh + Idh)
-    B_l = beta_l * Indl
-
-    # Differential equations for each compartment
-    dSdt = birth_rate - (B_h + B_l) * S + delta * (Rh + Rl) - death_rate * S
-    dEhdt = B_h * S - tau * Eh - death_rate * Eh
-    dEldt = B_l * S - tau * El - death_rate * El
-
-    # High virulence infected
-    dIndhdt = tau * Eh - delta_d * theta * Indh - phi_recover * sigma * Indh - death_rate * Indh
-    dIdhdt = delta_d * theta * Indh - phi_recover * p_recover * sigma * Idh - death_rate * Idh
-
-    # Low virulence infected
-    dIndldt = tau * El - delta_d * theta * Indl - sigma * Indl - death_rate * Indl
-    dIdldt = delta_d * theta * Indl - p_recover * sigma * Idl - death_rate * Idl
-
-    # Recovery compartments
-    dRhdt = phi_recover * sigma * (p_recover * Idh + Indh) - delta * Rh - death_rate * Rh
-    dRldt = sigma * (p_recover * Idl + Indl) - delta * Rl - death_rate * Rl
-
-    return dSdt, dEhdt, dIndhdt, dIdhdt, dRhdt, dEldt, dIndldt, dIdldt, dRldt
-
 #%% Solve ODEs
 # Integrate the ODE system
-solution = odeint(model, pop_values, t, args=(parameters,))
+solution = odeint(SEIRS_first_model, pop_values, t, args=(parameters,))
 
 # Create DataFrame for results
 columns = ['Susceptible', 'Exposed_High', 'Infected_NotDrug_High', 'Infected_Drug_High', 'Recovered_High',
