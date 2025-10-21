@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import seaborn as sns
-from Models import SEIRS_first_model
+from Models.SEIRS_Models import SEIRS_first_model
 
 np.random.seed(42)
 

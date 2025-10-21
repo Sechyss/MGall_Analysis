@@ -1,9 +1,10 @@
 #%% Imports
+from tkinter import SE
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-from Models import SEIRS_first_model
+from Models.SEIRS_Models import SEIRS_second_model
 
 np.random.seed(42)
 
@@ -22,7 +23,7 @@ pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl])
 pop_values = pop_values / np.sum(pop_values)  # Normalize to proportions
 
 #%% Parameters
-theta = 0.0  # Proportion of exposed who will eventually take the drug
+theta = 0.5  # Proportion of exposed who will eventually take the drug
 p_recover = 0.5  # Drug effect on recovery
 phi_transmission = 1.3  # High virulence transmission multiplier
 phi_recover = 0.75  # High virulence recovery reduction
@@ -41,7 +42,7 @@ parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
 t = np.linspace(0, 365, 365)
 
 #%% Solve ODEs
-solution = odeint(SEIRS_first_model, pop_values, t, args=(parameters,))
+solution = odeint(SEIRS_second_model, pop_values, t, args=(parameters,))
 columns = ['Susceptible', 'Exposed_High', 'Infected_NotDrug_High', 'Infected_Drug_High', 'Recovered_High',
            'Exposed_Low', 'Infected_NotDrug_Low', 'Infected_Drug_Low', 'Recovered_Low']
 results = pd.DataFrame(solution, columns=columns)
@@ -63,4 +64,5 @@ ax.set_xlabel('Time (days)')
 ax.set_ylabel('Proportion of Population')
 ax.legend(framealpha=0.7)
 plt.tight_layout()
-plt.savefig('first_draft_model_dynamics.png', dpi=300)
+plt.savefig('./Figures/second_draft_model_dynamics.png', dpi=300)
+plt.show()

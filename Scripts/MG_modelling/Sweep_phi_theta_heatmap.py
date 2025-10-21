@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
-from Models import SEIRS_first_model
+from Models.SEIRS_Models import SEIRS_first_model
 import pandas as pd
 #%% --- Parameter Sweep: phi_transmission vs theta ---
 # --- baseline parameters ---
