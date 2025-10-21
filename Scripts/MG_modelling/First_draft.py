@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-from numpy.linalg import eigvals
 from Models import SEIRS_first_model
 
 np.random.seed(42)
