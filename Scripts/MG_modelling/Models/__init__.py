@@ -1,1 +1,0 @@
-from Scripts.MG_modelling.Models import SEIRS_first_model
