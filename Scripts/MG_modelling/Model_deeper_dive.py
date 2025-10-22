@@ -1,59 +1,60 @@
 # Model_deeper_dive.py
 # Detailed annotated script exploring the SEIRS model behaviour and stability.
-# Each section below is commented to explain purpose and steps.
 
 #%% Imports
-import numpy as np                # numerical arrays and math functions
-import pandas as pd               # dataframes for storing results / tables
-from scipy.integrate import odeint # ODE integrator
-import matplotlib.pyplot as plt   # plotting
-from numpy.linalg import eigvals  # eigenvalue computation for Jacobian stability
-from Models.SEIRS_Models import SEIRS_first_model  # ODE system function (model equations)
+import numpy as np
+import pandas as pd
+from scipy.integrate import odeint
+import matplotlib.pyplot as plt
+from numpy.linalg import eigvals
+from Models.SEIRS_Models import SEIRS_second_model
+from Models import params as model_params  # import default parameters
 
-# Make any stochastic behaviour reproducible (seed numpy RNG)
+# Make any stochastic behaviour reproducible
 np.random.seed(42)
 
-#%% Initial Conditions (counts -> proportions)
-# Set initial absolute counts for each compartment (two strains: high and low virulence).
-S = 10000   # susceptible individuals
-Eh = 0      # exposed to high-virulence strain
-Indh = 5    # infected (high-virulence), not on drug
-Idh = 0     # infected (high-virulence), on drug
-Rh = 0      # recovered from high-virulence
-El = 0      # exposed to low-virulence
-Indl = 5    # infected (low-virulence), not on drug
-Idl = 0     # infected (low-virulence), on drug
-Rl = 0      # recovered from low-virulence
+#%% --- Load Initial Conditions from module ---
+# --- baseline parameters (loaded from Models.params, with sensible defaults) ---
+# use getattr so script still runs if a name is missing in model_params
+beta_l = getattr(model_params, "beta_l", 0.25)
+birth_rate = getattr(model_params, "birth_rate", 0.0)
+death_rate = getattr(model_params, "death_rate", 0.0)
+delta = getattr(model_params, "delta", 1/90)
+delta_d = getattr(model_params, "delta_d", 1/3)
+p_recover = getattr(model_params, "p_recover", 0.5)
+phi_recover = getattr(model_params, "phi_recover", 0.75)
+sigma = getattr(model_params, "sigma", 1/10)
+tau = getattr(model_params, "tau", 1/3)
+# optional defaults for grids / time (override in params.py if desired)
+phi_transmission = getattr(model_params, "phi_transmission", None)
+theta = getattr(model_params, "theta", None)
+t_max = getattr(model_params, "t_max", 365)
+t_steps = getattr(model_params, "t_steps", 365)
 
-# Pack initial state into a numpy array and normalize to proportions (model expects fractions)
-pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl])
-pop_values = pop_values / np.sum(pop_values)  # convert counts -> proportions
+# --- initial conditions (loaded from Models.params) ---
+# load initial compartment counts from params.py (fall back to previous defaults if missing)
+S0 = getattr(model_params, "S", 10000)
+Eh0 = getattr(model_params, "Eh", 0)
+Indh0 = getattr(model_params, "Indh", 5)
+Idh0 = getattr(model_params, "Idh", 0)
+Rh0 = getattr(model_params, "Rh", 0)
+El0 = getattr(model_params, "El", 0)
+Indl0 = getattr(model_params, "Indl", 5)
+Idl0 = getattr(model_params, "Idl", 0)
+Rl0 = getattr(model_params, "Rl", 0)
+y0 = np.array([S0, Eh0, Indh0, Idh0, Rh0, El0, Indl0, Idl0, Rl0])
+# Normalize to proportions (model expects fractions/proportions rather than absolute counts)
+y0 = y0 / y0.sum()
 
-#%% Parameters
-# Model parameters with brief explanations:
-theta = 0.0               # fraction of exposed who will eventually take the drug (treatment coverage)
-p_recover = 0.5           # drug effect on recovery (scale factor; 0..1)
-phi_transmission = 1.3    # multiplier increasing transmission for high-virulence strain (beta_h = phi_transmission * beta_l)
-phi_recover = 0.75        # modifier for recovery for high-virulence (if <1 then recovery is slower)
-sigma = 1/10              # recovery rate (1 / infectious period in days)
-delta = 1/90              # immunity waning rate (1 / duration of immunity in days)
-tau = 1/3                 # progression rate from exposed -> infectious (1 / incubation period)
-delta_d = 1/3             # rate of starting drug (1 / average delay until drug start)
-birth_rate = 0.0          # demographic birth rate (set 0 for short-term dynamics)
-death_rate = 0.0          # demographic death rate
-beta_l = 0.25             # baseline transmission rate for low-virulence strain
-
-# Pack parameters into tuple in order expected by SEIRS_first_model
 parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
               phi_recover, phi_transmission, sigma, tau, theta)
-
-# Time vector: simulate for one year (365 days) with daily resolution
-t = np.linspace(0, 365, 365)
-
+# --- time vector ---
+# Use t_max / t_steps from params.py when available, otherwise daily for one year
+t = np.linspace(0, t_max, int(t_steps))
 #%% Solve ODEs (baseline run)
 # Integrate the ODE system with baseline parameters to obtain time series for each compartment.
 # SEIRS_first_model signature: f(y, t, params) -> derivatives
-solution = odeint(SEIRS_first_model, pop_values, t, args=(parameters,))
+solution = odeint(SEIRS_second_model, y0, t, args=(parameters,))
 
 # Column labels matching the ordering returned by SEIRS_first_model
 columns = [
@@ -95,7 +96,7 @@ ax.set_xlabel('Time (days)')
 ax.set_ylabel('Proportion of Population')
 ax.legend(framealpha=0.7)
 plt.tight_layout()
-plt.savefig('./Figures/model_deeper_dive_dynamics.png', dpi=300)
+plt.savefig('./Figures/model_deeper_dive_dynamics_secondmodel.png', dpi=300)
 plt.show()
 
 #%% 1️⃣ Check approximate equilibrium (final timepoint)
@@ -158,7 +159,7 @@ plt.xlabel("Low-virulence infection proportion")
 plt.ylabel("High-virulence infection proportion")
 plt.title("Phase plane: competition between strains")
 plt.grid(True, alpha=0.4)
-plt.savefig('./Figures/phase_plane_high_low_infection.png', dpi=300)
+plt.savefig('./Figures/phase_plane_high_low_infection_secondmodel.png', dpi=300)
 plt.show()
 
 #%% 5️⃣ Scenario comparison: vary theta (drug usage coverage)
@@ -172,7 +173,7 @@ for th in thetas:
     params_var = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
                   phi_recover, phi_transmission, sigma, tau, th)
     # NOTE: use SEIRS_first_model as the ODE function (was 'model' in earlier drafts, which is undefined)
-    sol = odeint(SEIRS_first_model, pop_values, t, args=(params_var,))
+    sol = odeint(SEIRS_second_model, y0, t, args=(params_var,))
     # Unpack solution; only need infected compartments for metrics
     _, _, Indh, Idh, _, _, Indl, Idl, _ = sol.T
 
@@ -195,7 +196,7 @@ plt.ylabel("Peak infection proportion")
 plt.title("Effect of drug coverage on infection peaks")
 plt.legend()
 plt.tight_layout()
-plt.savefig('./Figures/drug_coverage_infection_peaks.png', dpi=300)
+plt.savefig('./Figures/drug_coverage_infection_peaks_secondmodel.png', dpi=300)
 plt.show()
 
 #%% 7️⃣ Bifurcation-like plot: dominance at equilibrium as theta varies
@@ -210,7 +211,7 @@ plt.ylabel("High virulence fraction at equilibrium")
 plt.title("Bifurcation-like diagram: selection for virulence vs drug coverage")
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig('./Figures/bifurcation_virulence_drug_coverage.png', dpi=300)
+plt.savefig('./Figures/bifurcation_virulence_drug_coverage_secondmodel.png', dpi=300)
 plt.show()
 
 # Print a concise summary table of dominance across tested theta values

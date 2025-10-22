@@ -5,51 +5,53 @@ from scipy.integrate import odeint # ODE integrator
 import matplotlib.pyplot as plt   # plotting
 import seaborn as sns             # nicer plotting styles
 from Models.SEIRS_Models import SEIRS_first_model  # the ODE model function to integrate
+from Models import params as model_params  # import default parameters
 
-# Fixable note: np.random.seed is used to make any randomized behaviour reproducible
+# Make any stochastic behaviour reproducible
 np.random.seed(42)
 
-#%% Initial Conditions (Proportions)
-# Set initial population counts for each compartment (absolute counts)
-S = 10000    # Susceptible individuals
-Eh = 0       # Exposed to high-virulence strain
-Indh = 5     # Infected (high-virulence), not on drug
-Idh = 0      # Infected (high-virulence), on drug
-Rh = 0       # Recovered from high-virulence
-El = 0       # Exposed to low-virulence
-Indl = 5     # Infected (low-virulence), not on drug
-Idl = 0      # Infected (low-virulence), on drug
-Rl = 0       # Recovered from low-virulence
+#%% --- Load Initial Conditions from module ---
+# --- baseline parameters (loaded from Models.params, with sensible defaults) ---
+# use getattr so script still runs if a name is missing in model_params
+beta_l = getattr(model_params, "beta_l", 0.25)
+birth_rate = getattr(model_params, "birth_rate", 0.0)
+death_rate = getattr(model_params, "death_rate", 0.0)
+delta = getattr(model_params, "delta", 1/90)
+delta_d = getattr(model_params, "delta_d", 1/3)
+p_recover = getattr(model_params, "p_recover", 0.5)
+phi_recover = getattr(model_params, "phi_recover", 0.75)
+sigma = getattr(model_params, "sigma", 1/10)
+tau = getattr(model_params, "tau", 1/3)
+# optional defaults for grids / time (override in params.py if desired)
+phi_transmission = getattr(model_params, "phi_transmission", None)
+theta = getattr(model_params, "theta", None)
+t_max = getattr(model_params, "t_max", 365)
+t_steps = getattr(model_params, "t_steps", 365)
 
-# Pack initial state into an array and normalize to proportions (model expects fractions)
-pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl])
-pop_values = pop_values / np.sum(pop_values)  # convert counts -> proportions
+# --- initial conditions (loaded from Models.params) ---
+# load initial compartment counts from params.py (fall back to previous defaults if missing)
+S0 = getattr(model_params, "S", 10000)
+Eh0 = getattr(model_params, "Eh", 0)
+Indh0 = getattr(model_params, "Indh", 5)
+Idh0 = getattr(model_params, "Idh", 0)
+Rh0 = getattr(model_params, "Rh", 0)
+El0 = getattr(model_params, "El", 0)
+Indl0 = getattr(model_params, "Indl", 5)
+Idl0 = getattr(model_params, "Idl", 0)
+Rl0 = getattr(model_params, "Rl", 0)
+y0 = np.array([S0, Eh0, Indh0, Idh0, Rh0, El0, Indl0, Idl0, Rl0])
+# Normalize to proportions (model expects fractions/proportions rather than absolute counts)
+y0 = y0 / y0.sum()
 
-#%% Parameters
-# Define model parameters with brief explanation for each
-theta = 0.3             # fraction of exposed who will eventually take the drug
-p_recover = 0.5         # effectiveness factor of drug on recovery (0..1)
-phi_transmission = 1.3  # multiplicative factor: how much more transmissible high strain is
-phi_recover = 0.75      # multiplier affecting recovery for high-virulence (e.g. <1 slows recovery)
-sigma = 1/10            # recovery rate (1 / infectious period in days)
-delta = 1/90            # immunity waning rate (1 / duration of immunity in days)
-tau = 1/3               # progression rate from exposed -> infectious (1 / incubation period)
-delta_d = 1/3           # rate of starting drug (1 / average delay to drug start)
-birth_rate = 0.0        # demographic birth rate (set to 0 for short epidemic runs)
-death_rate = 0.0        # demographic death rate
-beta_l = 0.25           # baseline transmission rate for low-virulence strain
-
-# Pack parameters into tuple in the order expected by SEIRS_first_model
 parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
               phi_recover, phi_transmission, sigma, tau, theta)
-
-# Time vector: simulate one year with daily resolution
-t = np.linspace(0, 365 * 1, 365 * 1)
+# --- time vector ---
+# Use t_max / t_steps from params.py when available, otherwise daily for one year
+t = np.linspace(0, t_max, int(t_steps))
 
 #%% Solve ODEs (baseline run)
 # Integrate the ODE system once at baseline parameters to produce a results DataFrame
-# SEIRS_first_model must accept signature (y, t, params) and return derivatives
-solution = odeint(SEIRS_first_model, pop_values, t, args=(parameters,))
+solution = odeint(SEIRS_first_model, y0, t, args=(parameters,))
 
 # Column names corresponding to model state ordering returned by SEIRS_first_model
 columns = [
@@ -106,7 +108,7 @@ def run_model(param_dict):
 
     # IMPORTANT: use the imported model function (SEIRS_first_model).
     # Original code used 'model' which is undefined here — that is a bug.
-    sol = odeint(SEIRS_first_model, pop_values, t, args=(params,))
+    sol = odeint(SEIRS_first_model, y0, t, args=(params,))
 
     # Convert to DataFrame using the same columns defined earlier
     df = pd.DataFrame(sol, columns=columns)
@@ -123,7 +125,7 @@ baseline = {
     'delta_d': 1/3,
     'p_recover': 0.5,
     'phi_recover': 0.75,
-    'phi_transmission': 1.5,
+    'phi_transmission': 1.3,
     'sigma': 1/10,
     'tau': 1/3,
     'theta': 0.3
