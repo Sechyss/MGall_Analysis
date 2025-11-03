@@ -11,12 +11,12 @@ Rl = 0
 
 # Model parameters (units: days for rates unless noted)
 # Treatment / biology
-theta = 0.0            # fraction of exposed who will eventually take the drug (0..1)
+theta = 0.3            # fraction of exposed who will eventually take the drug (0..1)
 p_recover = 0.5        # effectiveness factor of drug on recovery (0..1)
 
 # Virulence modifiers
-phi_transmission = 1.3 # multiplier for high-virulence transmission (beta_h = phi_transmission * beta_l)
-phi_recover = 0.75     # modifier for recovery for high-virulence (if <1, recovery is slower)
+phi_transmission = 1.05 # multiplier for high-virulence transmission (beta_h = phi_transmission * beta_l)
+phi_recover = 0.85     # modifier for recovery for high-virulence (if <1, recovery is slower)
 
 # Rates (per day)
 sigma = 1/10           # recovery rate (1 / infectious period)
