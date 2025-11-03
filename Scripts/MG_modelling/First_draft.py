@@ -1,45 +1,49 @@
 #%% Imports
-from tkinter import SE
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 from Models.SEIRS_Models import SEIRS_second_model
+from Models import params as model_params  # load shared defaults and initial conditions
 
 np.random.seed(42)
 
-#%% Initial Conditions (Proportions)
-S = 10000
-Eh = 0
-Indh = 5
-Idh = 0
-Rh = 0
-El = 0
-Indl = 5
-Idl = 0
-Rl = 0
+#%% Initial Conditions (load from Models.params and normalize to proportions)
+# use getattr to provide sensible fallbacks if a name is missing in params.py
+S = getattr(model_params, "S", 10000)
+Eh = getattr(model_params, "Eh", 0)
+Indh = getattr(model_params, "Indh", 5)
+Idh = getattr(model_params, "Idh", 0)
+Rh = getattr(model_params, "Rh", 0)
+El = getattr(model_params, "El", 0)
+Indl = getattr(model_params, "Indl", 5)
+Idl = getattr(model_params, "Idl", 0)
+Rl = getattr(model_params, "Rl", 0)
 
-pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl])
-pop_values = pop_values / np.sum(pop_values)  # Normalize to proportions
+pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl], dtype=float)
+pop_values = pop_values / pop_values.sum()  # Normalize to proportions
 
-#%% Parameters
-theta = 0.5  # Proportion of exposed who will eventually take the drug
-p_recover = 0.5  # Drug effect on recovery
-phi_transmission = 1.3  # High virulence transmission multiplier
-phi_recover = 0.75  # High virulence recovery reduction
-sigma = 1/10  # Recovery rate
-delta = 1/90  # Immunity loss rate
-tau = 1/3  # Progression from exposed to infectious
-delta_d = 1/3  # Delay rate for starting drug (~3 days)
-birth_rate = 0.0
-death_rate = 0.0
-beta_l = 0.25
+#%% Parameters (load from Models.params)
+# use getattr to preserve robustness if params.py is missing an entry
+theta = getattr(model_params, "theta", 0.5)
+p_recover = getattr(model_params, "p_recover", 0.5)
+phi_transmission = getattr(model_params, "phi_transmission", 1.3)
+phi_recover = getattr(model_params, "phi_recover", 0.75)
+sigma = getattr(model_params, "sigma", 1/10)
+delta = getattr(model_params, "delta", 1/90)
+tau = getattr(model_params, "tau", 1/3)
+delta_d = getattr(model_params, "delta_d", 1/3)
+birth_rate = getattr(model_params, "birth_rate", 0.0)
+death_rate = getattr(model_params, "death_rate", 0.0)
+beta_l = getattr(model_params, "beta_l", 0.25)
 
 parameters = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
               phi_recover, phi_transmission, sigma, tau, theta)
 
-# Time vector: 1 year, daily resolution
-t = np.linspace(0, 365, 365)
+# Time vector: use shared time grid from params if present, otherwise default to one year daily
+t_max = getattr(model_params, "t_max", 365)
+t_steps = int(getattr(model_params, "t_steps", 365))
+t = np.linspace(0, t_max, t_steps)
 
 #%% Solve ODEs
 solution = odeint(SEIRS_second_model, pop_values, t, args=(parameters,))
