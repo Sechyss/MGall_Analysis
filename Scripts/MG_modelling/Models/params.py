@@ -15,7 +15,7 @@ theta = 0.3            # fraction of exposed who will eventually take the drug (
 p_recover = 1.5        # treated recovery multiplier (absolute). Treated recovery rate = p_recover * sigma
 
 # Virulence modifiers
-phi_transmission = 1.05 # multiplier for high-virulence transmission (beta_h = phi_transmission * beta_l)
+phi_transmission = 0.935 # multiplier for high-virulence transmission (beta_h = phi_transmission * beta_l)
 phi_recover = 0.85     # modifier for recovery for high-virulence (if <1, recovery is slower)
 
 # Rates (per day)

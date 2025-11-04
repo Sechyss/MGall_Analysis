@@ -48,8 +48,8 @@ pop_values = pop_values / pop_values.sum()  # Normalize to proportions
 theta = getattr(model_params, "theta", 0.5)
 # p_recover: multiplier applied to recovery rate for treated individuals; fallback 0.5
 p_recover = getattr(model_params, "p_recover", 0.5)
-# phi_transmission: multiplier for transmission of high-virulence strain; fallback 1.05
-phi_transmission = getattr(model_params, "phi_transmission", 1.05)
+# phi_transmission: multiplier for transmission of high-virulence strain; fallback 0.935
+phi_transmission = getattr(model_params, "phi_transmission", 0.935)
 # phi_recover: recovery modifier for high-virulence (applies to baseline recovery for high strain)
 phi_recover = getattr(model_params, "phi_recover", 0.85)
 # sigma: baseline recovery rate (1/days); fallback 1/10 day^-1
@@ -409,7 +409,6 @@ for theta_idx, theta_val in enumerate(theta_values):
     # Left subplot: Exposed High (Eh) time series across R0 values
     ax1 = plt.subplot(1, 2, 1)
     for i, R0_low_target in enumerate(r0_values):
-        # plot Eh trajectory for this R0 value with corresponding color
         ax1.plot(t, Eh_mat_theta[i, :], color=colors[i],
                  label=f"R0_low_target={R0_low_target:.2f}, R0_low_adj={R0_low_theta[i]:.2f}")
     ax1.set_xlabel("Time (days)")
@@ -421,7 +420,6 @@ for theta_idx, theta_val in enumerate(theta_values):
     # Right subplot: Exposed Low (El) time series across R0 values
     ax2 = plt.subplot(1, 2, 2)
     for i, R0_low_target in enumerate(r0_values):
-        # plot El trajectory for this R0 value
         ax2.plot(t, El_mat_theta[i, :], color=colors[i],
                  label=f"R0_low_target={R0_low_target:.2f}, R0_low_adj={R0_low_theta[i]:.2f}")
     ax2.set_xlabel("Time (days)")
@@ -551,35 +549,46 @@ plt.show()
 print("Heatmap analysis complete: check ./Figures/theta_p_recover_heatmap.png")
 
 #%% Strain competition analysis
+# Objective: quantify which strain dominates for theta∈[0,1] and p_recover∈[1,2]
+
+# Use fine grids strictly within requested ranges
+n_theta, n_p = 21, 21  # adjust resolution as needed
+theta_grid = np.linspace(0.0, 1.0, n_theta)         # [0.00 ... 1.00]
+p_recover_grid = np.linspace(1.0, 2.0, n_p)         # [1.00 ... 2.00]
+
 def compute_dominance_ratio(theta_val, p_val, R0_low_target):
-    """Returns ratio of high-strain to low-strain peak prevalence"""
+    """Returns ratio of peak high- to low-strain infectious prevalence."""
     beta_l_i = beta_from_r0(R0_low_target)
     parameters = (beta_l_i, birth_rate, death_rate, delta, delta_d, p_val,
                   phi_recover, phi_transmission, sigma, tau, theta_val)
-    
     sol = odeint(SEIRS_first_model, pop_values, t, args=(parameters,))
-    
-    # Total infectious high = Indh + Idh
-    I_high = sol[:, 2] + sol[:, 3]
-    # Total infectious low = Indl + Idl
-    I_low = sol[:, 6] + sol[:, 7]
-    
+    I_high = sol[:, 2] + sol[:, 3]  # Indh + Idh
+    I_low  = sol[:, 6] + sol[:, 7]  # Indl + Idl
     return I_high.max() / (I_low.max() + 1e-12)
 
-# Create dominance surface
 dominance_surface = np.zeros((len(theta_grid), len(p_recover_grid)))
 for i, theta_val in enumerate(theta_grid):
     for j, p_val in enumerate(p_recover_grid):
         dominance_surface[i, j] = compute_dominance_ratio(theta_val, p_val, 1.5)
 
 plt.figure(figsize=(8, 6))
-plt.imshow(dominance_surface, aspect='auto', cmap='RdBu_r', origin='lower', vmin=0, vmax=2)
-plt.colorbar(label='High/Low strain dominance ratio')
-plt.xlabel('p_recover')
-plt.ylabel('theta')
-plt.title('Strain Competition: High/Low Ratio\n(ratio > 1: high strain wins)')
+im = plt.imshow(dominance_surface, aspect='auto', cmap='RdBu_r', origin='lower',
+                vmin=0, vmax=2)
+plt.colorbar(im, label='High/Low strain dominance ratio')
+plt.xlabel('p_recover (1.0–2.0)')
+plt.ylabel('theta (0.0–1.0)')
+plt.title('Strain Competition: High/Low Ratio (ratio > 1: high strain wins)')
+
+# Clean ticks: show 6 evenly spaced labels across the actual value ranges
+x_idx = np.linspace(0, len(p_recover_grid) - 1, 6).round().astype(int)
+y_idx = np.linspace(0, len(theta_grid) - 1, 6).round().astype(int)
+plt.xticks(x_idx, [f'{p_recover_grid[k]:.2f}' for k in x_idx])
+plt.yticks(y_idx, [f'{theta_grid[k]:.2f}' for k in y_idx])
+
+plt.tight_layout()
 plt.savefig('./Figures/strain_dominance_heatmap.png', dpi=300)
 plt.show()
+print("Strain dominance analysis complete: check ./Figures/strain_dominance_heatmap.png")
 
 #%% Outbreak timing analysis
 def analyze_outbreak_timing(theta_val, R0_low_target):
