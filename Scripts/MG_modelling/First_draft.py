@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-from Models.SEIRS_Models import SEIRS_second_model
+from Models.SEIRS_Models import SEIRS_first_model
 from Models import params as model_params  # load shared defaults and initial conditions
 
 np.random.seed(42)
@@ -27,8 +27,8 @@ pop_values = pop_values / pop_values.sum()  # Normalize to proportions
 # use getattr to preserve robustness if params.py is missing an entry
 theta = getattr(model_params, "theta", 0.5)
 p_recover = getattr(model_params, "p_recover", 0.5)
-phi_transmission = getattr(model_params, "phi_transmission", 1.3)
-phi_recover = getattr(model_params, "phi_recover", 0.75)
+phi_transmission = getattr(model_params, "phi_transmission", 1.05)
+phi_recover = getattr(model_params, "phi_recover", 0.85)
 sigma = getattr(model_params, "sigma", 1/10)
 delta = getattr(model_params, "delta", 1/90)
 tau = getattr(model_params, "tau", 1/3)
@@ -46,7 +46,7 @@ t_steps = int(getattr(model_params, "t_steps", 365))
 t = np.linspace(0, t_max, t_steps)
 
 #%% Solve ODEs
-solution = odeint(SEIRS_second_model, pop_values, t, args=(parameters,))
+solution = odeint(SEIRS_first_model, pop_values, t, args=(parameters,))
 columns = ['Susceptible', 'Exposed_High', 'Infected_NotDrug_High', 'Infected_Drug_High', 'Recovered_High',
            'Exposed_Low', 'Infected_NotDrug_Low', 'Infected_Drug_Low', 'Recovered_Low']
 results = pd.DataFrame(solution, columns=columns)
@@ -55,18 +55,18 @@ Sdt, Ehdt, Indhdt, Idhdt, Rhdt, Eldt, Indldt, Idldt, Rldt = solution.T
 #%% Plot time dynamics
 fig = plt.figure(figsize=(12, 8), facecolor='white')
 ax = fig.add_subplot(111, facecolor='#f4f4f4', axisbelow=True)
-ax.plot(t, Sdt, 'b', lw=2, label='Susceptible')
+#ax.plot(t, Sdt, 'b', lw=2, label='Susceptible')
 ax.plot(t, Ehdt, 'y', lw=2, label='Exposed High')
-ax.plot(t, Indhdt, 'r', lw=2, label='Infected Not Drug High')
-ax.plot(t, Idhdt, 'm', lw=2, label='Infected Drug High')
-ax.plot(t, Rhdt, 'g', lw=2, label='Recovered High')
+#ax.plot(t, Indhdt, 'r', lw=2, label='Infected Not Drug High')
+#ax.plot(t, Idhdt, 'm', lw=2, label='Infected Drug High')
+#ax.plot(t, Rhdt, 'g', lw=2, label='Recovered High')
 ax.plot(t, Eldt, 'c', lw=2, label='Exposed Low')
-ax.plot(t, Indldt, color='orange', lw=2, label='Infected Not Drug Low')
-ax.plot(t, Idldt, color='brown', lw=2, label='Infected Drug Low')
-ax.plot(t, Rldt, color='olive', lw=2, label='Recovered Low')
+#ax.plot(t, Indldt, color='orange', lw=2, label='Infected Not Drug Low')
+#ax.plot(t, Idldt, color='brown', lw=2, label='Infected Drug Low')
+#ax.plot(t, Rldt, color='olive', lw=2, label='Recovered Low')
 ax.set_xlabel('Time (days)')
 ax.set_ylabel('Proportion of Population')
 ax.legend(framealpha=0.7)
 plt.tight_layout()
-plt.savefig('./Figures/second_draft_model_dynamics.png', dpi=300)
+plt.savefig('./Figures/first_draft_model_dynamics.png', dpi=300)
 plt.show()
