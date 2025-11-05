@@ -1,4 +1,39 @@
 # filepath: /home/albertotr/PycharmProjects/MGall_Analysis/Scripts/MG_modelling/Parameter_testing.py
+"""
+Parameter sensitivity analysis for SEIRS virulence-transmission trade-off model.
+
+Model Hypothesis:
+-----------------
+Tests whether symptom-targeting drugs can facilitate evolution of "super-virulent" 
+strains by removing the constraint that high virulence = immobile/dead hosts.
+
+Key Biological Assumptions:
+1. Transmission requires symptoms (sneezing, coughing, etc.)
+2. Drug reduces symptoms but doesn't eliminate pathogen
+3. High-virulence strain:
+   - Produces strong symptoms → both treated AND untreated transmit
+   - B_h = beta_h * (Indh + Idh)
+   - Drug reduces symptoms but can't eliminate transmission completely
+4. Low-virulence strain:
+   - Produces mild symptoms → ONLY untreated transmit
+   - B_l = beta_l * Indl
+   - Drug eliminates weak symptoms → no transmission from treated cases (Idl)
+
+Parameter Sweeps Performed:
+---------------------------
+1. R0_low baseline: Tests epidemic dynamics across transmission intensities (0.5-3.0)
+2. p_recover sweep: Treatment effectiveness (1.2-1.8) - how much faster treated recover
+3. theta sweep: Treatment coverage (0.0-1.0) - tests dose-response relationship
+4. theta * p_recover interaction: 2D heatmap showing joint effects on peak exposure
+5. Strain competition: High/Low dominance ratio across (theta, p_recover) grid
+6. Outbreak timing: When do peak exposures occur for each strain?
+7. Attack rate: Final epidemic size vs R0 and treatment coverage
+
+Outputs:
+--------
+- ./Figures/: Time series plots and heatmaps for each parameter sweep
+- ./Tables/: CSV files with full time series data for reproducibility
+"""
 #%% Imports
 # import operating-system utilities (used to create output folders)
 import os
@@ -43,54 +78,60 @@ pop_values = np.array([S, Eh, Indh, Idh, Rh, El, Indl, Idl, Rl], dtype=float)
 # normalize the initial vector so compartments are proportions summing to 1
 pop_values = pop_values / pop_values.sum()  # Normalize to proportions
 
-#%% Parameters (load from Models.params)
-# theta: fraction of exposed who will eventually take the drug; use fallback 0.5 if missing
-theta = getattr(model_params, "theta", 0.5)
-# p_recover: multiplier applied to recovery rate for treated individuals; fallback 0.5
-p_recover = getattr(model_params, "p_recover", 0.5)
-# phi_transmission: multiplier for transmission of high-virulence strain; fallback 0.935
-phi_transmission = getattr(model_params, "phi_transmission", 0.935)
-# phi_recover: recovery modifier for high-virulence (applies to baseline recovery for high strain)
-phi_recover = getattr(model_params, "phi_recover", 0.85)
-# sigma: baseline recovery rate (1/days); fallback 1/10 day^-1
-sigma = getattr(model_params, "sigma", 1/10)
-# delta: immunity loss rate (1/days); fallback 1/90 day^-1
-delta = getattr(model_params, "delta", 1/90)
-# tau: progression rate from exposed to infectious (1/days); fallback 1/3
-tau = getattr(model_params, "tau", 1/3)
-# delta_d: rate of delay to start drug (1/days); fallback 1/3
-delta_d = getattr(model_params, "delta_d", 1/3)
-# birth_rate: per-capita birth rate (fallback 0.0)
+#%% Parameters (load from Models.params with corrected comments)
+# Treatment parameters
+theta = getattr(model_params, "theta", 0.3)
+# theta: fraction of DETECTED cases that receive treatment (0..1)
+# Effective treatment rate = delta_d * theta
+
+p_recover = getattr(model_params, "p_recover", 1.5)
+# p_recover: recovery rate multiplier for treated individuals (>1 = faster recovery)
+# Treated recover at: p_recover * sigma
+# Untreated recover at: sigma
+
+# Virulence modifiers
+phi_transmission = getattr(model_params, "phi_transmission", 1.05)
+# phi_transmission: transmission multiplier for high-virulence (beta_h = phi_transmission * beta_l)
+# Default 1.05 = 5% higher transmission for high-virulence strain
+
+phi_recover = getattr(model_params, "phi_recover", 1.0)
+# phi_recover: recovery rate modifier for high-virulence (currently 1.0 = no effect)
+# Future: <1 = slower recovery (longer infectious period), >1 = faster recovery
+
+# Disease progression rates (per day)
+sigma = getattr(model_params, "sigma", 1/10)       # Recovery rate (10-day infectious period)
+delta = getattr(model_params, "delta", 1/90)       # Immunity waning rate (90-day immunity)
+tau = getattr(model_params, "tau", 1/3)            # Exposed → Infectious rate (3-day incubation)
+delta_d = getattr(model_params, "delta_d", 1/3)    # Detection rate (3 days to detection)
+
+# Demography (set to 0 for short-term epidemic focus)
 birth_rate = getattr(model_params, "birth_rate", 0.0)
-# death_rate: per-capita death rate (fallback 0.0)
 death_rate = getattr(model_params, "death_rate", 0.0)
-# note: beta_l will be computed later from target R0 values
 
-# Time vector: use shared time grid from params if present, otherwise use one year daily resolution
-t_max = getattr(model_params, "t_max", 365)                 # simulation horizon in days
-t_steps = int(getattr(model_params, "t_steps", 365))       # number of time points
-t = np.linspace(0, t_max, t_steps)                         # time array for ODE solver
+# Time grid
+t_max = getattr(model_params, "t_max", 365)
+t_steps = int(getattr(model_params, "t_steps", 365))
+t = np.linspace(0, t_max, t_steps)
 
-# ensure output directories exist (Figures and Tables) to avoid file I/O errors later
+# Ensure output directories exist
 os.makedirs('./Figures', exist_ok=True)
 os.makedirs('./Tables', exist_ok=True)
 
-#%% R0 sweep settings
-# allow r0_values to be overridden in params.py; otherwise use a default array
+#%% R0 sweep settings (corrected comment about R0 approximation)
 r0_values = getattr(model_params, "r0_values", np.array([0.5, 1.0, 1.5, 2.0, 3.0]))
-r0_values = np.atleast_1d(r0_values)  # ensure it's an array even if user provides a scalar
+r0_values = np.atleast_1d(r0_values)
 
-# Heuristic mapping from desired R0_low to beta_l used in the model:
-# simple approximation: R0_low ≈ beta_l / sigma  -> therefore beta_l = R0_low * sigma
+# Compute beta_l from target R0_low
+# For untreated population: R0 ≈ beta / sigma (assuming negligible waning during outbreak)
+# Therefore: beta_l = R0_low * sigma
 beta_from_r0 = lambda R0: (R0 * sigma)
 
-# allocate storage arrays for time series of exposed compartments across R0 values
-Eh_matrix = np.zeros((len(r0_values), len(t)))  # rows: R0 values, cols: time
+# Storage for time series across R0 values
+Eh_matrix = np.zeros((len(r0_values), len(t)))
 El_matrix = np.zeros((len(r0_values), len(t)))
-# store approximate R0_high corresponding to each beta_l for reporting
 R0_high_values = np.zeros(len(r0_values))
 
-#%% Run simulations for each target R0_low (baseline p_recover)
+#%% Run simulations for each target R0_low (baseline p_recover and theta)
 # loop over target low-strain R0 values
 for idx, R0_low_target in enumerate(r0_values):
     # compute beta_l that would produce target R0_low under the simple heuristic

@@ -26,9 +26,9 @@ pop_values = pop_values / pop_values.sum()  # Normalize to proportions
 #%% Parameters (load from Models.params)
 # use getattr to preserve robustness if params.py is missing an entry
 theta = getattr(model_params, "theta", 0.5)
-p_recover = getattr(model_params, "p_recover", 0.5)
+p_recover = getattr(model_params, "p_recover", 1.5)
 phi_transmission = getattr(model_params, "phi_transmission", 1.05)
-phi_recover = getattr(model_params, "phi_recover", 0.85)
+phi_recover = getattr(model_params, "phi_recover", 1)
 sigma = getattr(model_params, "sigma", 1/10)
 delta = getattr(model_params, "delta", 1/90)
 tau = getattr(model_params, "tau", 1/3)
