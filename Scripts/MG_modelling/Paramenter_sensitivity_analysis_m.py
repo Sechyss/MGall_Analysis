@@ -19,12 +19,11 @@ death_rate = getattr(model_params, "death_rate", 0.0)
 delta = getattr(model_params, "delta", 1/90)
 delta_d = getattr(model_params, "delta_d", 1/3)
 p_recover = getattr(model_params, "p_recover", 0.5)
-phi_recover = getattr(model_params, "phi_recover", 0.75)
+phi_recover = getattr(model_params, "phi_recover", 1)
 sigma = getattr(model_params, "sigma", 1/10)
 tau = getattr(model_params, "tau", 1/3)
-# optional defaults for grids / time (override in params.py if desired)
-phi_transmission = getattr(model_params, "phi_transmission", None)
-theta = getattr(model_params, "theta", None)
+phi_transmission = getattr(model_params, "phi_transmission", 1.05)
+theta = getattr(model_params, "theta", 0.25)
 t_max = getattr(model_params, "t_max", 365)
 t_steps = getattr(model_params, "t_steps", 365)
 
@@ -123,53 +122,88 @@ baseline = {
     'death_rate': 0.0,
     'delta': 1/90,
     'delta_d': 1/3,
-    'p_recover': 0.5,
-    'phi_recover': 0.75,
-    'phi_transmission': 1.3,
+    'p_recover': 1.5,
+    'phi_recover': 1,
+    'phi_transmission': 1.05,
     'sigma': 1/10,
     'tau': 1/3,
     'theta': 0.3
 }
 
-def sensitivity_analysis(param_dict, variation=0.1):
+def sensitivity_analysis(param_dict, personalized_ranges):
     """
-    One-at-a-time (OAT) sensitivity analysis.
-    For each parameter in param_dict:
-      - evaluate outcome at (1 - variation) * param and (1 + variation) * param
-      - compute a simple sensitivity index = (high - low) / (2 * variation * baseline_value)
-    Returns a DataFrame with low/high/baseline and sensitivity_index for each parameter.
+    One-at-a-time sensitivity analysis with personalized ranges.
+    Uses midpoint as baseline for fair comparison.
     """
-    baseline_result = run_model(param_dict)  # run model at baseline for reference
     sens_results = {}
 
-    # Iterate through each parameter to perturb it independently
+    # Iterate through each parameter
     for key in param_dict:
-        # low and high perturbed values (±variation fraction)
-        p_values = [param_dict[key] * (1 - variation), param_dict[key] * (1 + variation)]
-        outcomes = []
-        for val in p_values:
-            test_params = param_dict.copy()
-            test_params[key] = val
-            outcomes.append(run_model(test_params))  # run model and store outcome
+        p_low = personalized_ranges[key]['low']
+        p_high = personalized_ranges[key]['high']
+        p_mid = (p_low + p_high) / 2  # midpoint as baseline
+        
+        # Run model at low, mid, and high values
+        test_params_low = param_dict.copy()
+        test_params_low[key] = p_low
+        outcome_low = run_model(test_params_low)
+        
+        test_params_mid = param_dict.copy()
+        test_params_mid[key] = p_mid
+        outcome_mid = run_model(test_params_mid)
+        
+        test_params_high = param_dict.copy()
+        test_params_high[key] = p_high
+        outcome_high = run_model(test_params_high)
 
-        # Calculate a normalized sensitivity index (finite-difference / fractional change)
+        # Calculate sensitivity index (normalized by parameter range)
+        param_range = p_high - p_low
+        outcome_range = outcome_high - outcome_low
+        
+        # Normalized sensitivity: how much does outcome change per unit change in parameter?
+        if param_range != 0:
+            sensitivity_index = outcome_range / param_range
+        else:
+            sensitivity_index = 0
+
         sens_results[key] = {
-            'low': outcomes[0],
-            'high': outcomes[1],
-            'baseline': baseline_result,
-            # avoid division by zero; index approximates derivative normalized by baseline
-            'sensitivity_index': (outcomes[1] - outcomes[0]) / (2 * variation * param_dict[key])
+            'param_low': p_low,
+            'param_mid': p_mid,
+            'param_high': p_high,
+            'outcome_low': outcome_low,
+            'outcome_mid': outcome_mid,
+            'outcome_high': outcome_high,
+            'sensitivity_index': sensitivity_index,
+            'percent_change': (outcome_range / outcome_mid * 100) if outcome_mid != 0 else 0
         }
 
-    # Return results as a DataFrame with parameters as rows
     return pd.DataFrame(sens_results).T
 
-# Run the sensitivity analysis with default 10% perturbation
-sens_df = sensitivity_analysis(baseline, variation=0.1)
+# Personalized ranges for sensitivity analysis
+personalized_ranges = {
+    'beta_l': {'low': 0.2, 'high': 0.3},
+    'birth_rate': {'low': 0.0, 'high': 0.0},
+    'death_rate': {'low': 0.0, 'high': 0.0},
+    'delta': {'low': 1/100, 'high': 1/80},
+    'delta_d': {'low': 1/4, 'high': 1/2},
+    'p_recover': {'low': 1.0, 'high': 2.0},
+    'phi_recover': {'low': 0.5, 'high': 1.0},
+    'phi_transmission': {'low': 1.0, 'high': 1.15},
+    'sigma': {'low': 1/15, 'high': 1/5},
+    'tau': {'low': 1/4, 'high': 1/2},
+    'theta': {'low': 0.0, 'high': 1.0}
+}
 
-# Print concise summary table showing baseline, low, high and sensitivity index
+# Run the sensitivity analysis with personalized ranges
+sens_df = sensitivity_analysis(baseline, personalized_ranges)
+
+# Print concise summary table showing midpoint baseline, outcome_low, outcome_high and sensitivity index
 print("\n=== Sensitivity Analysis Results ===")
-print(sens_df[['baseline', 'low', 'high', 'sensitivity_index']])
+print(sens_df[['outcome_mid', 'outcome_low', 'outcome_high', 'sensitivity_index', 'percent_change']])
+
+# Print parameter low, mid, and high values
+print("\n=== Parameter Values Used ===")
+print(sens_df[['param_low', 'param_mid', 'param_high']])
 
 #%% --- Plot sensitivity results as a horizontal bar chart (beautified) ---
 
@@ -203,7 +237,7 @@ for i, (idx, val) in enumerate(zip(sens_sorted.index, sens_sorted['sensitivity_i
 plt.tight_layout()
 
 # Save plot to file for reproducibility; plt.show() will also display if backend is interactive
-plt.savefig('sensitivity_tornado_plot.png', dpi=300)
+plt.savefig('./Figures/sensitivity_tornado_plot.png', dpi=300)
 plt.show()
 
 # %%

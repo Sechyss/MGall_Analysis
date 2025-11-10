@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 from numpy.linalg import eigvals
-from Models.SEIRS_Models import SEIRS_second_model
+from Models.SEIRS_Models import SEIRS_first_model
 from Models import params as model_params  # import default parameters
 
 # Make any stochastic behaviour reproducible
@@ -22,12 +22,12 @@ death_rate = getattr(model_params, "death_rate", 0.0)
 delta = getattr(model_params, "delta", 1/90)
 delta_d = getattr(model_params, "delta_d", 1/3)
 p_recover = getattr(model_params, "p_recover", 0.5)
-phi_recover = getattr(model_params, "phi_recover", 0.75)
+phi_recover = getattr(model_params, "phi_recover", 1)
 sigma = getattr(model_params, "sigma", 1/10)
 tau = getattr(model_params, "tau", 1/3)
-# optional defaults for grids / time (override in params.py if desired)
-phi_transmission = getattr(model_params, "phi_transmission", None)
-theta = getattr(model_params, "theta", None)
+
+phi_transmission = getattr(model_params, "phi_transmission", 1.05)
+theta = getattr(model_params, "theta", 0.25)
 t_max = getattr(model_params, "t_max", 365)
 t_steps = getattr(model_params, "t_steps", 365)
 
@@ -54,7 +54,7 @@ t = np.linspace(0, t_max, int(t_steps))
 #%% Solve ODEs (baseline run)
 # Integrate the ODE system with baseline parameters to obtain time series for each compartment.
 # SEIRS_first_model signature: f(y, t, params) -> derivatives
-solution = odeint(SEIRS_second_model, y0, t, args=(parameters,))
+solution = odeint(SEIRS_first_model, y0, t, args=(parameters,))
 
 # Column labels matching the ordering returned by SEIRS_first_model
 columns = [
@@ -81,22 +81,22 @@ fig = plt.figure(figsize=(12, 8), facecolor='white')
 ax = fig.add_subplot(111, facecolor='#f4f4f4', axisbelow=True)
 
 # Plot each compartment with distinct colours and labels
-ax.plot(t, Sdt, 'b', lw=2, label='Susceptible')
+# ax.plot(t, Sdt, 'b', lw=2, label='Susceptible')
 ax.plot(t, Ehdt, 'y', lw=2, label='Exposed High')
-ax.plot(t, Indhdt, 'r', lw=2, label='Infected Not Drug High')
-ax.plot(t, Idhdt, 'm', lw=2, label='Infected Drug High')
-ax.plot(t, Rhdt, 'g', lw=2, label='Recovered High')
+# ax.plot(t, Indhdt, 'r', lw=2, label='Infected Not Drug High')
+# ax.plot(t, Idhdt, 'm', lw=2, label='Infected Drug High')
+# ax.plot(t, Rhdt, 'g', lw=2, label='Recovered High')
 ax.plot(t, Eldt, 'c', lw=2, label='Exposed Low')
-ax.plot(t, Indldt, color='orange', lw=2, label='Infected Not Drug Low')
-ax.plot(t, Idldt, color='brown', lw=2, label='Infected Drug Low')
-ax.plot(t, Rldt, color='olive', lw=2, label='Recovered Low')
+# ax.plot(t, Indldt, color='orange', lw=2, label='Infected Not Drug Low')
+# ax.plot(t, Idldt, color='brown', lw=2, label='Infected Drug Low')
+# ax.plot(t, Rldt, color='olive', lw=2, label='Recovered Low')
 
 # Axis labels, legend, layout and save figure
 ax.set_xlabel('Time (days)')
 ax.set_ylabel('Proportion of Population')
 ax.legend(framealpha=0.7)
 plt.tight_layout()
-plt.savefig('./Figures/model_deeper_dive_dynamics_secondmodel.png', dpi=300)
+plt.savefig('./Figures/model_deeper_dive_dynamics_model.png', dpi=300)
 plt.show()
 
 #%% 1️⃣ Check approximate equilibrium (final timepoint)
@@ -159,12 +159,12 @@ plt.xlabel("Low-virulence infection proportion")
 plt.ylabel("High-virulence infection proportion")
 plt.title("Phase plane: competition between strains")
 plt.grid(True, alpha=0.4)
-plt.savefig('./Figures/phase_plane_high_low_infection_secondmodel.png', dpi=300)
+plt.savefig('./Figures/phase_plane_high_low_infection_model.png', dpi=300)
 plt.show()
 
 #%% 5️⃣ Scenario comparison: vary theta (drug usage coverage)
-# Sweep theta from 0 -> 0.9 and record peak and equilibrium prevalence for each strain.
-thetas = np.linspace(0, 0.9, 10)
+# Sweep theta from 0 -> 1 and record peak and equilibrium prevalence for each strain.
+thetas = np.linspace(0, 1, 10)
 peak_high, peak_low = [], []
 eq_high, eq_low = [], []
 
@@ -173,7 +173,7 @@ for th in thetas:
     params_var = (beta_l, birth_rate, death_rate, delta, delta_d, p_recover,
                   phi_recover, phi_transmission, sigma, tau, th)
     # NOTE: use SEIRS_first_model as the ODE function (was 'model' in earlier drafts, which is undefined)
-    sol = odeint(SEIRS_second_model, y0, t, args=(params_var,))
+    sol = odeint(SEIRS_first_model, y0, t, args=(params_var,))
     # Unpack solution; only need infected compartments for metrics
     _, _, Indh, Idh, _, _, Indl, Idl, _ = sol.T
 
@@ -196,7 +196,7 @@ plt.ylabel("Peak infection proportion")
 plt.title("Effect of drug coverage on infection peaks")
 plt.legend()
 plt.tight_layout()
-plt.savefig('./Figures/drug_coverage_infection_peaks_secondmodel.png', dpi=300)
+plt.savefig('./Figures/drug_coverage_infection_peaks_model.png', dpi=300)
 plt.show()
 
 #%% 7️⃣ Bifurcation-like plot: dominance at equilibrium as theta varies
