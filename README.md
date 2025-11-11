@@ -1,4 +1,4 @@
-Collecting workspace information# MGall_Analysis
+# MGall_Analysis
 
 Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic analysis, including genome assembly, annotation, phylogenetics, pangenome analysis, GWAS, and epidemiological modeling.
 
