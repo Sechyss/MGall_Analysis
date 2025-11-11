@@ -1,168 +1,799 @@
-# MGall_Analysis
+Collecting workspace information# MGall_Analysis
 
-Collection of scripts for analysis of Mycoplasma gallisepticum data: manifest generation, MD5 matching, GFF parsing & GWAS Manhattan plotting, ODE SEIRS modelling, parameter sweeps and sensitivity analysis.
+Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic analysis, including genome assembly, annotation, phylogenetics, pangenome analysis, GWAS, and epidemiological modeling.
 
-Author: Dr. Alberto Torcello‑Requena — Environment and Sustainability Institute, University of Exeter
-
----
-
-## Repository layout (complete / updated)
-
-- Scripts/
-  - MG_genome/
-    - Manifest_files.py
-      - Builds sample manifest CSV from raw read folders.
-      - Reads `.md5` text files and replaces the `forward_file_md5` / `reverse_file_md5` columns in the template with the actual MD5 sum (file content).
-      - Normalises sample name matching by stripping `.fastq.gz.md5` and `.fastq.md5` suffixes so it matches current FASTQ filenames (e.g. `.fastq`).
-      - Produces `MGall_Manifest.csv` and `MGall_Manifest_with_MD5.csv`.
-  - Python_scripts/
-    - Manhattan_annotated.py
-      - Produces Manhattan plots and annotates Bonferroni‑significant SNPs with nearby genes.
-      - Parses GFF with Biopython / BCBio and uses `feature.location.strand` (avoids BiopythonDeprecationWarning).
-      - Handles chromosome/name mismatches and reports useful debug messages; configurable distance window for annotation.
-    - Rename_dictionary.py
-      - Utilities to build replacement dictionaries for sample / folder names used by manifest creation.
-  - MG_modelling/
-    - Models/
-      - params.py
-        - Centralised default parameters and initial compartment counts. All modelling scripts import from this module.
-      - SEIRS_Models.py
-        - The SEIRS model implementation used by all modelling scripts (functions: `SEIRS_first_model`, `SEIRS_second_model`, etc.).
-    - First_draft.py
-      - Original ODE model file (kept for reference); now loads parameters from `Models.params`.
-    - Paramenter_sensitivity_analysis_m.py
-      - One‑at‑a‑time sensitivity analysis using the model in `Models.SEIRS_Models`.
-      - Beautified horizontal bar (tornado) plot implemented with seaborn; updated to use `hue=...` + `legend=False` to avoid seaborn deprecation warnings.
-      - Saves plots in headless mode and falls back to interactive display when an interactive backend is available.
-    - Sweep_phi_theta_heatmap.py
-      - 2D parameter sweep (phi_transmission × theta), computes peak and equilibrium metrics for high‑virulence strain and produces heatmaps and CSV table.
-      - Reads default grids/time from `Models.params` when present.
-    - Model_deeper_dive.py
-      - Extended analysis: time series, Jacobian local stability, phase plane, theta sweeps and summary tables. Uses `Models.params` for defaults.
+**Author**: Dr. Alberto Torcello-Requena  
+**Affiliation**: Environment and Sustainability Institute, University of Exeter  
+**Contact**: alberto.torcello-requena@exeter.ac.uk
 
 ---
 
-## Key design changes (what's different now)
+## Table of Contents
 
-- Centralised parameters:
-  - All modelling and sweep scripts import model defaults and initial compartment counts from `Scripts/MG_modelling/Models/params.py`. Edit parameters in a single place.
-  - `params.py` also optionally includes `phi_vals`, `theta_vals`, `t_max`, `t_steps` to control sweeps and time grids.
-
-- MD5 / manifest handling:
-  - Scripts now read `.md5` files (text) and replace the manifest MD5 columns with the actual MD5 value read from those files.
-  - Matching between `.md5` filenames and FASTQ filenames normalises suffixes to handle both `.fastq` and legacy `.fastq.gz` names.
-
-- GFF parsing:
-  - Uses Biopython/BCBio parsing; accesses strand via `feature.location.strand` to avoid deprecation warnings.
-  - `find_nearby_genes()` logic improved to compute distances and return meaningful defaults when no genes found.
-
-- Plot backends & Qt issues:
-  - Scripts detect/set matplotlib backend at startup:
-    - Prefer interactive Qt backend (`Qt5Agg`) if available.
-    - Fall back to non‑interactive `Agg` for headless servers / CI.
-  - Sensible behavior: save plots automatically when `Agg` is used; show interactive windows only when a Qt/Tk backend is available.
-  - If you need interactive plotting on Linux desktops, install a Qt binding:
-    - pip: `pip install PyQt5` or `pip install PySide6`
-    - conda: `conda install pyqt -c conda-forge`
-  - For Jupyter interactive plots, install `ipympl` and enable `%matplotlib widget`.
-
-- Seaborn deprecation: when using `palette` provide `hue` (we use `hue=param` and set `legend=False`) or supply a single `color=`.
+1. Overview
+2. Repository Structure
+3. Installation & Requirements
+4. Workflow Overview
+5. Detailed Script Documentation
+6. R Analysis Pipeline
+7. Typical Use Cases
+8. Troubleshooting
+9. Citation
 
 ---
 
-## Requirements
+## Overview
 
-Python 3.8+ recommended. Core packages:
+This repository contains a complete computational pipeline for analyzing *Mycoplasma gallisepticum* genomic data from house finches (*Haemorhous mexicanus*). The analysis spans:
 
-- numpy, pandas, scipy, matplotlib, seaborn, biopython, bcbio‑gff, openpyxl
+- **Data management**: Sample manifest generation, metadata extraction, MD5 validation
+- **Genome assembly**: De novo assembly (SPAdes), quality control
+- **Annotation**: Prokka-based structural annotation
+- **Phylogenetics**: Maximum likelihood trees (IQ-TREE), time-calibrated phylogenies (BEAST), recombination detection (Gubbins)
+- **Pangenomics**: Gene presence/absence analysis (Panaroo), lineage-specific genes
+- **Population genetics**: SNP calling, GWAS, Manhattan plots
+- **Virulence analysis**: Phage detection (VIBRANT), defense systems (PADLOC)
+- **Epidemiological modeling**: SEIRS models with parameter sweeps and sensitivity analysis
 
-Install with pip:
+---
+
+## Repository Structure
+
 ```
-pip install numpy pandas scipy matplotlib seaborn biopython bcbio-gff openpyxl
+MGall_Analysis/
+├── .idea/                          # PyCharm project settings
+├── .vscode/                        # VS Code settings
+├── MGall_R_analysis/               # R-based analyses
+│   ├── 2_Functions/                # R utility functions
+│   │   ├── 2_2_Lineage_detection_20240909.R
+│   │   ├── 2_3_Lineage_fitness_20240909.R
+│   │   └── 2_4_Lineage_defining_mutations.R
+│   ├── Brownian_Alberto/           # Brownian motion trait evolution
+│   │   ├── Brownian_Alberto.R
+│   │   └── meta.txt                # Sample metadata
+│   ├── BacDating.R                 # Bayesian dating analysis
+│   ├── Panstripe.R                 # Pangenome stripe plots
+│   ├── Phylowave.R                 # Phylogenetic wave analysis
+│   ├── Position_segregating_sites.R
+│   ├── Skyline_lineages.R          # Skyline plots per lineage
+│   └── Skylineplot.R               # BEAST skyline plotting
+├── Scripts/                        # Python & shell scripts
+│   ├── General_python_scripts/     # General utilities
+│   │   ├── Alignment_trimming.py
+│   │   ├── Alignment_trimming_informativesites.py
+│   │   ├── Alignment2Fasta.py
+│   │   ├── AT_ratio_overtime.py
+│   │   ├── GeneContext_verification.py
+│   │   ├── GFFs2FNA.py
+│   │   ├── Pangenome_translation.py
+│   │   ├── Position_segregating_sites.py
+│   │   ├── Preparation_trees.py
+│   │   ├── Rename_dictionary.py
+│   │   ├── Rename_files.py
+│   │   ├── Rename_GFFs_metadata.py
+│   │   ├── Rename_taxa_columns.py
+│   │   ├── Rename_taxa_folders.py
+│   │   └── Tree_VCF.py
+│   ├── MG_genome/                  # Core genomic analyses
+│   │   ├── Alignment_lineages.py
+│   │   ├── Ancestral_tree_metadata.py
+│   │   ├── Creation_list_input_gubbins.py
+│   │   ├── Dictionary_clusters_heatmap.py
+│   │   ├── GWAS_results_fasta_results.py
+│   │   ├── Lineage_differences.py
+│   │   ├── Lineage_differences_vcf.py
+│   │   ├── Manhattan_annotated.py
+│   │   ├── Manhattan_plot.py
+│   │   ├── Manhattan_prep.py
+│   │   ├── Manifest_files.py
+│   │   ├── Metadata_extraction.py
+│   │   ├── Metadata_Viral_analysis.py
+│   │   ├── Pangenome_clustering_heatmap.py
+│   │   ├── Pastml_analysis.py
+│   │   ├── Phylogeny_snps.py
+│   │   ├── Presence_absence_matrix.py
+│   │   ├── SkyGrid_plot.py
+│   │   └── SkyGrid_tree.py
+│   ├── MG_motility/                # Motility gene analysis
+│   │   ├── Analysis_vcf_motility.py
+│   │   └── Motility_protein_preparation.py
+│   ├── Shell_scripts/              # Bash pipeline scripts
+│   │   ├── BCFtools.sh             # Consensus calling
+│   │   ├── Download_sra.sh         # SRA data retrieval
+│   │   ├── Gubbins_pipeline.sh     # Recombination detection
+│   │   ├── Lucy_Prokka.sh          # Annotation pipeline
+│   │   ├── Lucy_SPADES_Assembly.sh # De novo assembly
+│   │   ├── Padloc.sh               # Defense system detection
+│   │   ├── Panaroo_pipeline.sh     # Pangenome analysis
+│   │   ├── Poppunk_code.sh         # PopPUNK clustering
+│   │   ├── Prokka_command.sh
+│   │   ├── Prokka_complete_genomes.sh
+│   │   ├── SH_comparison.sh        # Tree topology tests
+│   │   ├── Sickle_readTrimming.sh  # Quality trimming
+│   │   ├── SPADES_Pipeline.sh
+│   │   ├── Tree_formation.sh
+│   │   ├── Treemaking_commands.sh
+│   │   └── Vibrant.sh              # Phage prediction
+│   └── Slurm_scripts/              # HPC cluster scripts
+│       ├── IQ-Tree_slurm.sh
+│       ├── Mgall_mapping_slurm.sh
+│       └── Variant_calling.sh
+└── README.md                       # This file
 ```
 
-Optional (interactive plotting):
-```
-pip install PyQt5        # or PySide6
-pip install ipympl        # for Jupyter widget backend
-```
+---
 
-Conda example:
-```
-conda create -n MGall_Analysis python=3.8 numpy pandas scipy matplotlib seaborn biopython openpyxl -c conda-forge
+## Installation & Requirements
+
+### Python Environment
+
+**Recommended**: Python 3.8+
+
+```bash
+# Core packages
+pip install numpy pandas scipy matplotlib seaborn biopython bcbio-gff openpyxl tqdm
+
+# Optional: Interactive plotting
+pip install PyQt5  # or PySide6
+pip install ipympl  # for Jupyter
+
+# Conda alternative
+conda create -n MGall_Analysis python=3.10 \
+  numpy pandas scipy matplotlib seaborn biopython openpyxl tqdm -c conda-forge
 conda activate MGall_Analysis
-conda install pyqt -c conda-forge    # optional interactive backend
 ```
+
+### R Environment
+
+**Required R packages**:
+
+```r
+install.packages(c("ape", "phangorn", "BactDating", "phytools", "coda", 
+                   "vcfR", "ggplot2", "ggtree", "cowplot", "mgcv", 
+                   "devtools", "RColorBrewer"))
+
+devtools::install_github("laduplessis/bdskytools")
+devtools::install_github("laduplessis/beastio")
+```
+
+### External Tools
+
+Required command-line tools (install via conda/apt/homebrew):
+
+- **Assembly**: SPAdes, sickle
+- **Mapping**: BBMap/BBTools, samtools, bcftools
+- **Annotation**: Prokka, VIBRANT, PADLOC
+- **Phylogenetics**: IQ-TREE, BEAST2, Gubbins, RAxML, FastTree
+- **Pangenomics**: Panaroo, PopPUNK
+- **Utilities**: seqkit, muscle
 
 ---
 
-## Typical workflows / commands
+## Workflow Overview
 
-1. Build manifest and replace MD5 columns with actual MD5 sums
-```
+### 1. Data Preparation
+```bash
+# Download SRA data
+bash Scripts/Shell_scripts/Download_sra.sh
+
+# Quality trimming
+bash Scripts/Shell_scripts/Sickle_readTrimming.sh
+
+# Generate manifest
 python Scripts/MG_genome/Manifest_files.py
-# Outputs: MGall_Manifest.csv and MGall_Manifest_with_MD5.csv
 ```
 
-2. Produce Manhattan plot and annotate significant SNPs
-```
-python Scripts/Python_scripts/Manhattan_annotated.py --manhattan path/to/gwas.tsv --gff path/to/annotations.gff --output out.png
-```
-Notes:
-- Ensure GWAS table contains columns `CHR`, `BP`, `P` or precomputed `LOG10P`.
-- If annotation shows "Unknown (0bp)", check GFF chromosome names, coordinate system, and distance parameter.
+### 2. Genome Assembly & Annotation
+```bash
+# De novo assembly
+bash Scripts/Shell_scripts/Lucy_SPADES_Assembly.sh /path/to/reads/
 
-3. Run baseline ODE model
-```
-python Scripts/MG_modelling/First_draft.py
-```
-(uses `Models.params` defaults)
+# Structural annotation
+bash Scripts/Shell_scripts/Lucy_Prokka.sh /path/to/assemblies/
 
-4. Sensitivity analysis (tornado plot)
-```
-python Scripts/MG_modelling/Paramenter_sensitivity_analysis_m.py
-# Saves sensitivity_tornado_plot.png
+# Extract genome sequences from GFF
+python Scripts/General_python_scripts/GFFs2FNA.py
 ```
 
-5. 2D sweep (phi × theta heatmap)
-```
-python Scripts/MG_modelling/Sweep_phi_theta_heatmap.py
-# Saves ./Figures/phi_theta_heatmap_firstmodel.png and ./Tables/phi_theta_heatmap_results_firstmodel.csv
+### 3. Mapping & Variant Calling
+```bash
+# Map to reference (HPC)
+sbatch Scripts/Slurm_scripts/Mgall_mapping_slurm.sh
+
+# Call variants
+sbatch Scripts/Slurm_scripts/Variant_calling.sh
+
+# Generate consensus sequences
+bash Scripts/Shell_scripts/BCFtools.sh
 ```
 
-6. In‑depth model exploration
+### 4. Phylogenetic Analysis
+```bash
+# Alignment trimming
+python Scripts/General_python_scripts/Alignment_trimming.py \
+  --sequences alignment.fasta --output trimmed.fasta
+
+# Recombination filtering
+bash Scripts/Shell_scripts/Gubbins_pipeline.sh
+
+# Maximum likelihood tree
+sbatch Scripts/Slurm_scripts/IQ-Tree_slurm.sh
+
+# Tree topology comparison
+bash Scripts/Shell_scripts/SH_comparison.sh
 ```
-python Scripts/MG_modelling/Model_deeper_dive.py
-# Saves multiple diagnostic figures (dynamics, phase plane, bifurcation-like plots)
+
+### 5. Pangenome Analysis
+```bash
+# Build pangenome
+bash Scripts/Shell_scripts/Panaroo_pipeline.sh
+
+# Cluster analysis
+python Scripts/MG_genome/Dictionary_clusters_heatmap.py
+
+# Lineage-specific genes
+python Scripts/MG_genome/Lineage_differences.py
+```
+
+### 6. GWAS & Association Studies
+```bash
+# Prepare Manhattan plot data
+python Scripts/MG_genome/Manhattan_prep.py
+
+# Generate annotated plot
+python Scripts/MG_genome/Manhattan_annotated.py \
+  --manhattan gwas.tsv --gff reference.gff --output plot.png
+
+# Extract significant genes
+python Scripts/MG_genome/GWAS_results_fasta_results.py
+```
+
+### 7. Temporal & Phylodynamic Analysis
+```r
+# In R
+source("MGall_R_analysis/Skylineplot.R")
+source("MGall_R_analysis/BacDating.R")
+source("MGall_R_analysis/Phylowave.R")
 ```
 
 ---
 
-## Debugging & tips
+## Detailed Script Documentation
 
-- If you see Qt plugin errors (wayland / xcb), the fastest solution for script runs is to set `MPLBACKEND=Agg` or let scripts fall back to `Agg`. For interactive plotting, install PyQt/PySide as noted above.
-- Biopython warning: replace `.strand` with `.location.strand` when using SeqFeature objects.
-- MD5 mapping:
-  - Provide an Excel (`md5_values.xlsx`) with columns mapping MD5 filenames → MD5 value, or store individual `.md5` files in the reads folder. The manifest script supports both approaches.
-- If a parameter change is needed across all analyses, edit `Scripts/MG_modelling/Models/params.py` once.
-- For reproducibility, code seeds numpy RNG where stochastic behaviour may exist.
+### General Python Scripts
+
+#### **Alignment_trimming.py**
+Removes gap-only columns from multiple sequence alignments.
+
+```bash
+python Alignment_trimming.py --sequences input.fasta --output nogaps.fasta
+```
+
+**Outputs**: Trimmed alignment + CSV of removed columns.
+
+#### **Alignment_trimming_informativesites.py**
+Filters alignment to parsimony-informative sites only.
+
+```bash
+python Alignment_trimming_informativesites.py
+```
+
+**Use case**: Reducing alignment size for faster phylogenetic inference.
+
+#### **AT_ratio_overtime.py**
+Calculates AT content over time and performs regression analysis.
+
+**Outputs**: 
+- `at_ratio_vs_time.png`
+- OLS regression summary (console)
+
+#### **Position_segregating_sites.py**
+Identifies segregating sites and extracts read-level information from BAM files.
+
+**Outputs**: `Test_pos.csv`
+
+#### **Rename_dictionary.py**
+Creates standardized name replacement dictionaries for Lucy/SRA samples.
+
+**Outputs**: 
+- `Lucy_replacements.pickle`
+- `Camille_replacements_foldername.pickle`
+
+#### **Rename_taxa_columns.py** / **Rename_taxa_folders.py**
+Batch renaming utilities for dataframes and file systems.
+
+```bash
+python Rename_taxa_columns.py --file input.tsv
+python Rename_taxa_folders.py --directory /path/to/data/
+```
 
 ---
 
-## Outputs
+### MG_genome Scripts
 
-- MGall_Manifest.csv, MGall_Manifest_with_MD5.csv
-- Manhattan plot PNGs (Manhattan_annotated.py)
-- Sensitivity plots (sensitivity_tornado_plot.png)
-- Sweep heatmaps (phi_theta_heatmap_firstmodel.png) and CSV results
-- Diagnostic figures produced by Model_deeper_dive.py
+#### **Manifest_files.py**
+Generates NCBI submission manifest with MD5 checksums.
+
+**Features**:
+- Reads `.md5` files or Excel sheet (`md5_values.xlsx`)
+- Normalizes FASTQ filename suffixes
+- Handles paired-end reads
+
+**Outputs**:
+- `MGall_Manifest.csv`
+- `MGall_Manifest_with_MD5.csv`
+
+#### **Metadata_extraction.py**
+Extracts metadata from GenBank files and combines with SRA/sample data.
+
+**Outputs**: `Metadata_genomes.xlsx` (multi-sheet Excel workbook)
+
+#### **Lineage_differences.py**
+Identifies lineage-specific genes using presence/absence matrix.
+
+**Key parameters**:
+- `filter1`: Minimum presence in lineage 1 (default: 0.60)
+- `filter2`: Maximum presence in lineage 2 (default: 0.30)
+
+**Outputs**:
+- Venn diagrams
+- Heatmaps
+- FASTA files of lineage-specific genes
+
+#### **Manhattan_annotated.py**
+Creates publication-quality Manhattan plots with gene annotations.
+
+```bash
+python Manhattan_annotated.py \
+  --manhattan mortality_manhattan.txt \
+  --gff reference.gff \
+  --output manhattan.png \
+  --distance 5000
+```
+
+**Features**:
+- Bonferroni correction threshold
+- Configurable annotation distance window
+- Handles GFF coordinate systems
+
+#### **Dictionary_clusters_heatmap.py**
+Categorizes pangenome clusters (lipoproteins, virulence, Cas9, motility).
+
+**Outputs**: `cluster_dict.pickle`
+
+#### **Pangenome_clustering_heatmap.py**
+Generates hierarchical clustering heatmap of gene presence/absence.
+
+**Features**:
+- Lineage-based sample ordering
+- Customizable color schemes
+- Exports sorted gene lists
+
+#### **SkyGrid_plot.py**
+Visualizes BEAST Skygrid output with lineage-specific trajectories.
+
+**Outputs**:
+- `Combined_Figures.png` (effective population size + Re)
+- Individual plots for debugging
+
+#### **Phylogeny_snps.py**
+Adds pie chart nodes to phylogenetic trees showing SNP distributions.
+
+**Outputs**: Annotated tree visualization
 
 ---
 
-## Contact & citation
+### MG_motility Scripts
 
-For questions about the code or data layout contact:
-Dr. Alberto Torcello‑Requena — alberto.torcello-requena@exeter.ac.uk
+#### **Analysis_vcf_motility.py**
+Analyzes SNPs in motility-related genes from VCF files.
 
-License: code provided "as is" (no license specified).
+**Workflow**:
+1. Loads candidate motility genes from BLAST results
+2. Filters pangenome for non-motility genes
+3. Extracts protein sequences
+4. Builds SNP matrix across samples
 
+**Outputs**: `Matrix_mutations_SNPs.tsv`
+
+#### **Motility_protein_preparation.py**
+Creates protein database from Prokka annotations for motility analysis.
+
+**Outputs**: `Lucy_protein_db.fna`
+
+---
+
+### Shell Scripts
+
+#### **Download_sra.sh**
+Batch download of FASTQ files from EBI FTP.
+
+```bash
+bash Download_sra.sh
+```
+
+**Features**: Parallel downloads using background processes.
+
+#### **Sickle_readTrimming.sh**
+Quality trimming with Sickle (paired-end mode).
+
+```bash
+bash Sickle_readTrimming.sh
+```
+
+**Outputs**: `*_sickle_R1.fastq.gz`, `*_sickle_R2.fastq.gz`, `*_sickle_single.fastq.gz`
+
+#### **Lucy_SPADES_Assembly.sh**
+De novo assembly pipeline for Lucy samples.
+
+```bash
+bash Lucy_SPADES_Assembly.sh /path/to/reads/
+```
+
+**Skips existing assemblies** to enable resumable runs.
+
+#### **Lucy_Prokka.sh** / **Prokka_command.sh**
+Structural annotation with Prokka (genetic code 4 for Mycoplasma).
+
+```bash
+bash Lucy_Prokka.sh /path/to/assemblies/
+```
+
+**Parameters**:
+- Genus: *Mycoplasma*
+- Species: *gallisepticum*
+- Code: 4 (Mycoplasma genetic code)
+
+#### **Gubbins_pipeline.sh**
+Recombination detection and masking.
+
+```bash
+bash Gubbins_pipeline.sh
+```
+
+**Key options**:
+- `--filter-percentage 50`: Remove sites with >50% recombination
+- `--extensive-search`: Improved accuracy
+- `--recon-with-dates`: Time-aware reconstruction
+
+#### **Panaroo_pipeline.sh**
+Pangenome construction with strict cleaning mode.
+
+```bash
+bash Panaroo_pipeline.sh
+```
+
+**Parameters**:
+- `--clean-mode strict`
+- `--core_threshold 0.98`
+- `--codon-table 4`
+
+#### **SH_comparison.sh**
+Tree topology hypothesis testing (SH test, AU test).
+
+```bash
+bash SH_comparison.sh
+```
+
+**Combines trees from**:
+- 60% threshold alignment
+- 80% threshold alignment
+- Parsimony-informative sites only
+- No-gaps alignment
+
+#### **Vibrant.sh** / **Padloc.sh**
+Prophage detection and defense system annotation.
+
+```bash
+bash Vibrant.sh /path/to/genomes/
+bash Padloc.sh /path/to/genomes/
+```
+
+---
+
+### Slurm Scripts (HPC)
+
+#### **Mgall_mapping_slurm.sh**
+Maps reads to reference genome using BBMap.
+
+```bash
+sbatch Mgall_mapping_slurm.sh
+```
+
+**Resource requirements**: 20 CPUs, 23 GB RAM per node.
+
+#### **Variant_calling.sh**
+Calls SNPs with bcftools (mpileup + call).
+
+```bash
+sbatch Variant_calling.sh
+```
+
+**Filters**: Minimum quality score ≥10, indels excluded.
+
+#### **IQ-Tree_slurm.sh**
+Maximum likelihood tree inference with model testing.
+
+```bash
+sbatch IQ-Tree_slurm.sh
+```
+
+**Features**: Automatic model selection, 1000 bootstraps.
+
+---
+
+## R Analysis Pipeline
+
+### Core Functions (2_Functions/)
+
+#### **2_2_Lineage_detection_20240909.R**
+Tools for identifying lineages using phylogenetic clustering.
+
+**Key functions**:
+- `number.descendants.all.nodes()`: Compute descendant counts
+- `test_node_gam()`: GAM-based lineage significance testing
+
+#### **2_3_Lineage_fitness_20240909.R**
+Fitness estimation for detected lineages.
+
+**Outputs**: MCMC chains for fitness parameters.
+
+#### **2_4_Lineage_defining_mutations.R**
+Ancestral state reconstruction for SNPs/amino acids.
+
+**Workflow**:
+1. Load VCF files for coding regions (E, M, N, ORF1a, etc.)
+2. Reconstruct ancestral states using maximum parsimony
+3. Identify lineage-defining mutations
+
+**Outputs**: RDS files with reconstruction objects.
+
+---
+
+### Standalone Scripts
+
+#### **BacDating.R**
+Bayesian dating of phylogenies using [`BactDating`](https://github.com/xavierdidelot/BactDating) package.
+
+**Use case**: Estimate divergence times and substitution rates.
+
+#### **Skylineplot.R**
+Visualizes BEAST Bayesian Skyline/Skygrid analyses.
+
+**Features**:
+- HPD interval plotting
+- Multiple trajectory comparison
+- Time-calibrated Ne(τ) curves
+
+#### **Panstripe.R**
+Generates pangenome stripe plots showing gene gain/loss patterns.
+
+```r
+source("MGall_R_analysis/Panstripe.R")
+```
+
+**Outputs**: PNG files with bootstrap confidence intervals.
+
+#### **Phylowave.R**
+Phylogenetic wave analysis for detecting selective sweeps.
+
+**Inputs**: Time-calibrated tree + SNP matrix.
+
+#### **Brownian_Alberto.R**
+Tests virulence traits for Brownian motion evolution.
+
+**Features**:
+- Phylogenetic signal (λ) estimation
+- Ancestral state reconstruction
+- Virulence index analysis
+
+**Metadata**: `meta.txt` contains sample dates, locations, virulence scores.
+
+---
+
+## Typical Use Cases
+
+### Use Case 1: New Sample Processing
+
+```bash
+# 1. Download and trim
+bash Scripts/Shell_scripts/Download_sra.sh
+bash Scripts/Shell_scripts/Sickle_readTrimming.sh
+
+# 2. Assembly and annotation
+bash Scripts/Shell_scripts/Lucy_SPADES_Assembly.sh /path/to/reads/
+bash Scripts/Shell_scripts/Lucy_Prokka.sh /path/to/assemblies/
+
+# 3. Extract metadata
+python Scripts/MG_genome/Metadata_extraction.py
+
+# 4. Generate manifest
+python Scripts/MG_genome/Manifest_files.py
+```
+
+### Use Case 2: Phylogenetic Analysis
+
+```bash
+# 1. Map to reference
+sbatch Scripts/Slurm_scripts/Mgall_mapping_slurm.sh
+
+# 2. Call variants
+sbatch Scripts/Slurm_scripts/Variant_calling.sh
+
+# 3. Build alignment
+python Scripts/General_python_scripts/Tree_VCF.py \
+  --directory /path/to/vcf/ --output alignment.fasta
+
+# 4. Trim and filter
+python Scripts/General_python_scripts/Alignment_trimming.py \
+  --sequences alignment.fasta --output trimmed.fasta
+
+# 5. Detect recombination
+bash Scripts/Shell_scripts/Gubbins_pipeline.sh
+
+# 6. Build tree
+sbatch Scripts/Slurm_scripts/IQ-Tree_slurm.sh
+```
+
+### Use Case 3: GWAS Workflow
+
+```bash
+# 1. Prepare association test output
+python Scripts/MG_genome/Manhattan_prep.py
+
+# 2. Annotate significant SNPs
+python Scripts/MG_genome/Manhattan_annotated.py \
+  --manhattan mortality_manhattan.txt \
+  --gff VA94_reference.gff \
+  --output mortality_manhattan.png
+
+# 3. Extract gene sequences
+python Scripts/MG_genome/GWAS_results_fasta_results.py
+
+# 4. Analyze motility genes (if relevant)
+python Scripts/MG_motility/Analysis_vcf_motility.py
+```
+
+### Use Case 4: Pangenome Analysis
+
+```bash
+# 1. Build pangenome
+bash Scripts/Shell_scripts/Panaroo_pipeline.sh
+
+# 2. Define gene clusters
+python Scripts/MG_genome/Dictionary_clusters_heatmap.py
+
+# 3. Identify lineage-specific genes
+python Scripts/MG_genome/Lineage_differences.py
+
+# 4. Visualize in R
+Rscript MGall_R_analysis/Panstripe.R
+```
+
+### Use Case 5: Temporal Dynamics
+
+```bash
+# 1. Run BEAST analysis (external)
+# 2. Process Skygrid output
+python Scripts/MG_genome/SkyGrid_plot.py
+
+# 3. Visualize in R
+Rscript MGall_R_analysis/Skylineplot.R
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### **1. MD5 Checksum Mismatch**
+```
+Error: MD5 file contains extra text
+```
+**Solution**: Ensure `.md5` files contain only the 32-character hash:
+```bash
+md5sum file.fastq > file.fastq.md5
+```
+
+#### **2. GFF Annotation Failures**
+```
+Unknown gene (0bp away)
+```
+**Solutions**:
+- Check chromosome name matching: `grep "^>" reference.fna` vs `awk '{print $1}' reference.gff`
+- Verify coordinate system (GFF3 is 1-based)
+- Increase distance window: `--distance 10000`
+
+#### **3. Biopython Deprecation Warnings**
+```
+BiopythonDeprecationWarning: feature.strand is deprecated
+```
+**Solution**: Use `feature.location.strand` instead.
+
+#### **4. Qt Backend Errors**
+```
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb"
+```
+**Solution**: Set matplotlib backend in script header:
+```python
+import matplotlib
+matplotlib.use('Agg')
+```
+
+#### **5. Prokka Fails on Large Genomes**
+```
+Error: Too many contigs
+```
+**Solution**: Filter short contigs before annotation:
+```bash
+seqkit seq -m 500 assembly.fasta > filtered.fasta
+```
+
+#### **6. IQ-TREE Memory Issues**
+```
+ERROR: Not enough memory
+```
+**Solution**: Reduce alignment size or use simpler model:
+```bash
+iqtree -s alignment.fasta -m GTR+G -mem 10G
+```
+
+---
+
+### Data File Locations
+
+Key hardcoded paths in scripts (update for your system):
+
+```bash
+# Base directory
+/home/albertotr/OneDrive/Data/Cambridge_Project/
+
+# Subdirectories
+Lucy_reads/            # Raw Lucy sequencing data
+SRA_reads/             # Downloaded SRA data
+CheckMbins/            # Reference genomes
+Mapped_output_*/       # Mapping results
+pangenome_results_*/   # Panaroo outputs
+GWAS/                  # Association study results
+```
+
+**Recommendation**: Use environment variables or config files for production use.
+
+---
+
+## Citation
+
+If you use this pipeline, please cite:
+
+```bibtex
+@software{TorcelloRequena2025,
+  author = {Torcello-Requena, Alberto},
+  title = {MGall_Analysis: Comprehensive Bioinformatics Pipeline for 
+           Mycoplasma gallisepticum Genomic Analysis},
+  year = {2025},
+  url = {https://github.com/[your-username]/MGall_Analysis}
+}
+```
+
+**Key publications**:
+- Phylogenetic methods: [IQ-TREE](http://www.iqtree.org/), [BEAST2](https://www.beast2.org/)
+- Pangenome analysis: [Panaroo](https://github.com/gtonkinhill/panaroo)
+- Recombination detection: [Gubbins](https://github.com/nickjcroucher/gubbins)
+
+---
+
+## License
+
+This code is provided "as is" for research purposes. No warranty implied.
+
+---
+
+## Version History
+
+- **v2.0** (2025-01-11): Complete refactoring with R integration
+- **v1.0** (2024): Initial Python-only pipeline
+
+---
+
+**Last updated**: 2025-01-11
