@@ -70,6 +70,19 @@ if cluster_col is None:
 # Extract significant Panaroo clusters from GWAS
 sig_clusters = set(df_filtered[cluster_col].astype(str))
 
+# Map GWAS beta direction to presence/absence (Positive=present, Negative=absent)
+cluster_beta_map = {}
+cluster_state_map = {}
+beta_col = next((c for c in ['beta', 'Beta', 'BETA', 'effect', 'Effect'] if c in df_filtered.columns), None)
+if beta_col:
+    # If multiple rows per cluster, average beta (sign retained in most cases)
+    cluster_beta_map = df_filtered.groupby(cluster_col)[beta_col].mean(numeric_only=True).to_dict()
+    cluster_state_map = {cl: ('present' if b >= 0 else 'absent')
+                         for cl, b in cluster_beta_map.items()
+                         if pd.notnull(b)}
+else:
+    print("[info] No beta/effect column found; GWAS presence/absence direction will not be annotated.")
+
 #%% Synteny/context analysis around GWAS-significant clusters
 
 OUT_DIR = 'synteny_context_'+ os.path.splitext(os.path.basename(GWAS_file))[0]
@@ -506,6 +519,15 @@ def analyze_synteny_for_sig_clusters(sig_clusters: set, window: int = 3):
             if cl in rtab_df.index and sample in rtab_df.columns:
                 present_rtab = int(rtab_df.at[cl, sample] > 0)
 
+            # GWAS direction annotations
+            gwas_beta = cluster_beta_map.get(cl, None)
+            gwas_state = cluster_state_map.get(cl, '')
+            if present_rtab is None or not gwas_state:
+                matches_dir = ''
+            else:
+                matches_dir = int((gwas_state == 'present' and present_rtab == 1) or
+                                  (gwas_state == 'absent' and present_rtab == 0))
+
             if loc is None:
                 # No GFF hit for this sample: annotate status and presence flags
                 status = 'absent_in_gff' if gene_id else 'absent_in_csv_and_gff'
@@ -527,7 +549,10 @@ def analyze_synteny_for_sig_clusters(sig_clusters: set, window: int = 3):
                     'right_clusters': '',
                     'near_contig_end': '',
                     'gml_neighbors_overlap': '',
-                    'non_unique_gene_name': (row.iloc[0][nonunique_col] if nonunique_col else '')
+                    'non_unique_gene_name': (row.iloc[0][nonunique_col] if nonunique_col else ''),
+                    'gwas_beta': gwas_beta,
+                    'gwas_presence_state': gwas_state,
+                    'matches_gwas_direction': matches_dir
                 })
                 continue
 
@@ -589,13 +614,69 @@ def analyze_synteny_for_sig_clusters(sig_clusters: set, window: int = 3):
                 'right_clusters': ';'.join([c for c in right_clusters if c]),
                 'near_contig_end': near_end,
                 'gml_neighbors_overlap': overlap_str,
-                'non_unique_gene_name': (row.iloc[0][nonunique_col] if nonunique_col else '')
+                'non_unique_gene_name': (row.iloc[0][nonunique_col] if nonunique_col else ''),
+                'gwas_beta': gwas_beta,
+                'gwas_presence_state': gwas_state,
+                'matches_gwas_direction': matches_dir
             })
+
+        # Derive consensus neighbor clusters from present samples
+        present_rows = [r for r in contexts if r['status'] == 'ok']
+        neighbor_cluster_counts = Counter()
+        for r in present_rows:
+            for c_ in (r['left_clusters'].split(';') + r['right_clusters'].split(';')):
+                if c_:
+                    neighbor_cluster_counts[c_] += 1
+        # Expected neighbors: those seen in >=20% of present samples (tunable)
+        expected_neighbors = {c for c, cnt in neighbor_cluster_counts.items()
+                              if present_rows and (cnt / len(present_rows)) >= 0.2}
+
+        # Classify absence rows
+        for r in contexts:
+            if r['status'] == 'ok':
+                r['absence_class'] = ''
+                r['missing_neighbor_fraction'] = ''
+                continue
+            # Skip if we have no consensus
+            if not expected_neighbors:
+                r['absence_class'] = 'undetermined'
+                r['missing_neighbor_fraction'] = ''
+                continue
+            # Presence of expected neighbor clusters in Rtab
+            sample = r['sample']
+            present_flags = []
+            for neigh in expected_neighbors:
+                if neigh in rtab_df.index and sample in rtab_df.columns:
+                    present_flags.append(int(rtab_df.at[neigh, sample] > 0))
+            if not present_flags:
+                r['absence_class'] = 'undetermined'
+                r['missing_neighbor_fraction'] = ''
+                continue
+            frac_missing = 1 - (sum(present_flags) / len(present_flags))
+            r['missing_neighbor_fraction'] = round(frac_missing, 3)
+            if r['presence_flag'] == 'present_rtab_only':
+                r['absence_class'] = 'annotation_issue'
+            elif frac_missing <= 0.2:
+                r['absence_class'] = 'target_only_missing_or_misannotated'
+            elif frac_missing >= 0.8:
+                r['absence_class'] = 'region_missing'
+            else:
+                r['absence_class'] = 'partial_region_loss'
 
         # Write per-sample contexts for this cluster
         ctx_df = pd.DataFrame(contexts)
         ctx_path = os.path.join(OUT_DIR, f'{cl}_synteny.tsv')
         ctx_df.to_csv(ctx_path, sep='\t', index=False)
+
+        # Consensus neighbor summary
+        cons_rows = []
+        for c_, cnt in neighbor_cluster_counts.most_common():
+            cons_rows.append({'cluster': cl,
+                              'neighbor_cluster': c_,
+                              'count_present_samples': cnt,
+                              'frequency': round(cnt / len(present_rows), 4)})
+        cons_df = pd.DataFrame(cons_rows)
+        cons_df.to_csv(os.path.join(OUT_DIR, f'{cl}_consensus_context.tsv'), sep='\t', index=False)
 
         # Signature frequencies (products)
         sig_counts = Counter(product_sigs)
