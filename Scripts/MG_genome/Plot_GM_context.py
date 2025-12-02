@@ -24,11 +24,26 @@ def _split_semicolon(s):
     return [x for x in s.split(';') if x != '']
 
 def _auto_window(ctx_df: pd.DataFrame) -> int:
-    # Infer window from the longest left/right lists
-    lmax = ctx_df['left_products'].dropna().map(lambda x: len(_split_semicolon(x))).max() if 'left_products' in ctx_df else 0
-    rmax = ctx_df['right_products'].dropna().map(lambda x: len(_split_semicolon(x))).max() if 'right_products' in ctx_df else 0
-    w = int(max(lmax or 0, rmax or 0))
-    return max(w, 1)
+    """
+    Infer window from the longest left/right lists, robust to NaNs/empties.
+    """
+    if ctx_df is None or ctx_df.empty:
+        return 1
+
+    def max_len(col: str) -> int:
+        if col not in ctx_df.columns:
+            return 0
+        s = ctx_df[col].fillna('')
+        # Count tokens safely even if cells are '', NaN, or non-strings
+        lens = s.map(lambda x: len(_split_semicolon(x)) if isinstance(x, str) else 0)
+        m = lens.max() if len(lens) else 0
+        try:
+            return int(m) if pd.notna(m) else 0
+        except Exception:
+            return 0
+
+    w = max(max_len('left_products'), max_len('right_products'), 1)
+    return w
 
 def _sanitize_token(t):
     if t is None or t == '' or str(t).lower() == 'na':
