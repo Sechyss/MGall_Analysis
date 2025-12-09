@@ -39,7 +39,7 @@ This repository contains a complete computational pipeline for analyzing *Mycopl
 
 ## Repository Structure
 
-```
+```bash
 MGall_Analysis/
 ├── .idea/                          # PyCharm project settings
 ├── .vscode/                        # VS Code settings
@@ -263,10 +263,10 @@ Scripts:
 
 Outputs per significant cluster:
 
-- <cluster>_synteny.tsv — per-sample rows with target/product, neighbor products/clusters, presence flags, GWAS beta, direction match, absence classification.
-- <cluster>_signatures.tsv — product signature frequencies.
-- <cluster>_cluster_signatures.tsv — cluster signature frequencies.
-- <cluster>_consensus_context.tsv — consensus neighbor clusters among present samples.
+- cluster_synteny.tsv — per-sample rows with target/product, neighbor products/clusters, presence flags, GWAS beta, direction match, absence classification.
+- cluster_signatures.tsv — product signature frequencies.
+- cluster_cluster_signatures.tsv — cluster signature frequencies.
+- cluster_consensus_context.tsv — consensus neighbor clusters among present samples.
 - Plots/PNG: synteny tiles (products/clusters), signature bars, absence summary, consensus neighbors, plus a sample status TSV.
 
 GWAS beta interpretation:
