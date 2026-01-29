@@ -35,6 +35,7 @@ Notes:
 
 import pandas as pd
 import os
+import pickle
 import networkx as nx
 from Bio import SeqIO
 from BCBio import GFF
@@ -46,7 +47,10 @@ os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/GWAS/')
 # Configure data folders produced by Panaroo and genome GFFs
 panaroo_data = '/home/albertotr/OneDrive/Data/Cambridge_Project/Pangenome_results_HF'
 gff_folder = '/home/albertotr/OneDrive/Data/Cambridge_Project/GFFs_genomes/HF_gffs'
-
+dictionary_path = '/home/albertotr/OneDrive/Data/Cambridge_Project/Camille_replacements_foldername.pickle'
+# Load dictionary for gene name replacements (if needed)
+with open(dictionary_path, 'rb') as f:
+    gene_name_dict = pickle.load(f)
 # Load Panaroo presence/absence (numeric matrix),
 # Panaroo final graph (gene cluster adjacency),
 # and pangenome reference (not used in this script but left for completeness).
