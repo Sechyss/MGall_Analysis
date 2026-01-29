@@ -14,7 +14,7 @@ Outputs:
 - *_consensus_neighbors.png
 - *_sample_status.tsv (subset metadata)
 Usage:
-  python Plot_GM_context.py --ctx-dir synteny_context_mortality_COGs --include-absent --mode both
+    python Plot_GM_context.py --ctx-dir synteny_context_mortality_COGs --mode both
 """
 
 import os
@@ -106,9 +106,9 @@ def _build_tile_matrix(ctx_df: pd.DataFrame, cluster: str, mode: str, window: in
         else:
             tokens = [''] * (2 * window + 1)
         rows.append((sample, tokens, status,
-                     row.get('presence_flag','unknown'),
-                     row.get('matches_gwas_direction',''),
-                     row.get('absence_class',''), row.get('missing_neighbor_fraction','')))
+                 row.get('presence_flag','unknown'),
+                 row.get('matches_gwas_direction',''),
+                 row.get('absence_class',''), row.get('missing_neighbor_fraction','')))
         match_flags.append(row.get('matches_gwas_direction',''))
     def sort_key(x):
         sample, tokens, status, pflag, match, aclass, missfrac = x
@@ -144,11 +144,28 @@ _ABSENCE_BORDER = {
     'undetermined': ('gray', 1.0, 'dotted')
 }
 
-def _draw_tiles(out_png: str, cluster: str, mode: str, samples: list[str], matrix: list[list[str]],
-                window: int, ctx_df: pd.DataFrame, color_map: dict, match_flags: list, row_meta: list[dict],
-                gwas_beta: float|None, gwas_state: str, col_w: float = 1.0, row_h: float = 0.35, dpi: int = 220):
-    """Render tile plot with GWAS direction and absence context annotations.
-       col_w: inches per context column, row_h: inches per sample row, dpi: output DPI."""
+def _draw_tiles(
+    out_png: str,
+    cluster: str,
+    mode: str,
+    samples: list[str],
+    matrix: list[list[str]],
+    window: int,
+    ctx_df: pd.DataFrame,
+    color_map: dict,
+    match_flags: list,
+    row_meta: list[dict],
+    gwas_beta: float | None,
+    gwas_state: str,
+    include_gwas: bool,
+    include_absent: bool,
+    col_w: float = 1.0,
+    row_h: float = 0.35,
+    dpi: int = 220,
+):
+    """Render tile plot with optional GWAS direction and absence context annotations.
+    col_w: inches per context column, row_h: inches per sample row, dpi: output DPI.
+    """
     n_rows = len(samples)
     if n_rows == 0:
         return
@@ -158,14 +175,16 @@ def _draw_tiles(out_png: str, cluster: str, mode: str, samples: list[str], matri
         for j, tok in enumerate(toks):
             img[i, j, :] = color_map.get(tok, (0.6, 0.6, 0.6))
 
-    # Estimate legend size (tokens + GWAS + absence entries)
+    # Estimate legend size (tokens + optional GWAS + optional absence entries)
     used_tokens = []
     for row in matrix:
         for t in row:
             if t and t not in used_tokens:
                 used_tokens.append(t)
     legend_token_count = min(25, len(used_tokens))
-    legend_lines = legend_token_count + 3 + len(_ABSENCE_BORDER)  # +GWAS entries +absence classes
+    gwas_extra = 3 if include_gwas else 0
+    absence_extra = len(_ABSENCE_BORDER) if include_absent else 0
+    legend_lines = legend_token_count + gwas_extra + absence_extra
     legend_frac = min(0.45, 0.22 + 0.012 * legend_lines)  # fraction of figure width reserved for legend
 
     # Compute figure size from content
@@ -178,27 +197,29 @@ def _draw_tiles(out_png: str, cluster: str, mode: str, samples: list[str], matri
 
     ax.imshow(img, aspect='auto', interpolation='nearest')
 
-    # Center tile border = GWAS direction match/mismatch
-    for i, (mf, meta) in enumerate(zip(match_flags, row_meta)):
-        if meta['status'] != 'ok':
-            continue
-        if mf == '':
-            edge_color = 'lightgray'
-        elif str(mf) == '1':
-            edge_color = 'green'
-        else:
-            edge_color = 'red'
-        ax.add_patch(plt.Rectangle((window - 0.5, i - 0.5), 1, 1,
-                                   fill=False, edgecolor=edge_color, linewidth=1.4))
+    # Center tile border = GWAS direction match/mismatch (optional)
+    if include_gwas:
+        for i, (mf, meta) in enumerate(zip(match_flags, row_meta)):
+            if meta['status'] != 'ok':
+                continue
+            if mf == '':
+                edge_color = 'lightgray'
+            elif str(mf) == '1':
+                edge_color = 'green'
+            else:
+                edge_color = 'red'
+            ax.add_patch(plt.Rectangle((window - 0.5, i - 0.5), 1, 1,
+                                       fill=False, edgecolor=edge_color, linewidth=1.4))
 
-    # Absent rows full-width border per absence_class
-    for i, meta in enumerate(row_meta):
-        if meta['status'] == 'ok':
-            continue
-        aclass = meta['absence_class']
-        color, lw, style = _ABSENCE_BORDER.get(aclass, ('gray', 0.8, 'dotted'))
-        ax.add_patch(plt.Rectangle((-0.5, i - 0.5), n_cols, 1,
-                                   fill=False, edgecolor=color, linewidth=lw, linestyle=style))
+    # Absent rows full-width border per absence_class (optional)
+    if include_absent:
+        for i, meta in enumerate(row_meta):
+            if meta['status'] == 'ok':
+                continue
+            aclass = meta['absence_class']
+            color, lw, style = _ABSENCE_BORDER.get(aclass, ('gray', 0.8, 'dotted'))
+            ax.add_patch(plt.Rectangle((-0.5, i - 0.5), n_cols, 1,
+                                       fill=False, edgecolor=color, linewidth=lw, linestyle=style))
 
     # Row labels with suffix markers
     ylabels = []
@@ -214,10 +235,11 @@ def _draw_tiles(out_png: str, cluster: str, mode: str, samples: list[str], matri
             else:
                 suffix += " [absent]"
         else:
-            if str(mf) == '0':
-                suffix += " !"
-            elif str(mf) != '1':
-                suffix += " ?"
+            if include_gwas:
+                if str(mf) == '0':
+                    suffix += " !"
+                elif str(mf) != '1':
+                    suffix += " ?"
         ylabels.append(s + suffix)
     y_fs = 6 if n_rows > 60 else (7 if n_rows > 30 else 8)
     ax.set_yticks(range(n_rows))
@@ -226,9 +248,9 @@ def _draw_tiles(out_png: str, cluster: str, mode: str, samples: list[str], matri
     ax.set_xticklabels([f"{i}" for i in range(-window, window + 1)], fontsize=9)
     ax.set_xlabel("Position relative to target (0 = target)")
 
-    # Title with GWAS interpretation
+    # Title with optional GWAS interpretation
     gwas_txt = ""
-    if gwas_beta is not None and gwas_state:
+    if include_gwas and (gwas_beta is not None) and gwas_state:
         direction_desc = ("presence → higher virulence" if gwas_beta >= 0
                           else "absence → higher virulence")
         gwas_txt = f" | GWAS beta={round(gwas_beta,4)} ({direction_desc})"
@@ -242,20 +264,22 @@ def _draw_tiles(out_png: str, cluster: str, mode: str, samples: list[str], matri
     handles = [plt.Line2D([0], [0], marker='s', color='w',
                           markerfacecolor=color_map[t], markersize=8,
                           label=(t[:40] + ('…' if len(t) > 40 else ''))) for t in used_tokens[:legend_token_count]]
-    # GWAS legend entries
-    handles += [
-        plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
-                   markeredgecolor='green', markersize=8, label='GWAS match'),
-        plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
-                   markeredgecolor='red', markersize=8, label='GWAS mismatch'),
-        plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
-                   markeredgecolor='lightgray', markersize=8, label='GWAS unknown')
-    ]
-    # Absence class legend entries
-    for aclass, (c, lw, style) in _ABSENCE_BORDER.items():
-        handles.append(plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
-                                  markeredgecolor=c, linestyle=style, linewidth=lw, markersize=8,
-                                  label=f"Absent: {aclass}"))
+    # GWAS legend entries (optional)
+    if include_gwas:
+        handles += [
+            plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
+                       markeredgecolor='green', markersize=8, label='GWAS match'),
+            plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
+                       markeredgecolor='red', markersize=8, label='GWAS mismatch'),
+            plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
+                       markeredgecolor='lightgray', markersize=8, label='GWAS unknown')
+        ]
+    # Absence class legend entries (optional)
+    if include_absent:
+        for aclass, (c, lw, style) in _ABSENCE_BORDER.items():
+            handles.append(plt.Line2D([0],[0], marker='s', color='w', markerfacecolor='white',
+                                      markeredgecolor=c, linestyle=style, linewidth=lw, markersize=8,
+                                      label=f"Absent: {aclass}"))
     if handles:
         # Place legend into reserved right margin
         ax.legend(handles=handles, bbox_to_anchor=(1.002, 1.0), loc='upper left',
@@ -337,13 +361,14 @@ def list_clusters(ctx_dir: str):
 
 def main():
     """CLI entry point: parse args, iterate clusters, generate plots and summary tables."""
-    ap = argparse.ArgumentParser(description="Plot synteny context outputs including absent samples and GWAS direction.")
+    ap = argparse.ArgumentParser(description="Plot synteny context outputs.")
     ap.add_argument('--ctx-dir', required=True, help='Path to synteny_context_ directory')
     ap.add_argument('--out-dir', default=None, help='Output directory (default: ctx-dir/plots)')
     ap.add_argument('--clusters', nargs='*', default=None, help='Specific clusters to plot (default: all)')
     ap.add_argument('--mode', choices=['both', 'products', 'clusters'], default='both', help='Tile plot mode')
     ap.add_argument('--top-n-sigs', type=int, default=12, help='Top signatures to show in bars')
-    ap.add_argument('--include-absent', action='store_true', help='Include absent samples in tile plots')
+    ap.add_argument('--include-absent', action='store_true', help='Include absent samples in tile plots (default off)')
+    ap.add_argument('--include-gwas', action='store_true', help='Include GWAS annotations (borders/legend/title) in tile plots (default off)')
     # New sizing controls
     ap.add_argument('--tile-col-w', type=float, default=1.05, help='Inches per context column in tile plots')
     ap.add_argument('--tile-row-h', type=float, default=0.38, help='Inches per sample row in tile plots')
@@ -367,7 +392,8 @@ def main():
 
         _write_status_table(os.path.join(out_dir, f"{cl}_sample_status.tsv"), ctx_df)
         _draw_signature_bars(os.path.join(out_dir, f"{cl}_signature_bars.png"), cl, prod_sig, clust_sig, args.top_n_sigs, dpi=args.dpi)
-        _draw_absence_summary(os.path.join(out_dir, f"{cl}_absence_summary.png"), cl, ctx_df, dpi=args.dpi)
+        if args.include_absent:
+            _draw_absence_summary(os.path.join(out_dir, f"{cl}_absence_summary.png"), cl, ctx_df, dpi=args.dpi)
         _draw_consensus_neighbors(os.path.join(out_dir, f"{cl}_consensus_neighbors.png"), cl, cons_df, dpi=args.dpi)
 
         window = _auto_window(ctx_df)
@@ -375,12 +401,12 @@ def main():
         # Cluster-level GWAS beta/state (same for all rows)
         gwas_beta = None
         gwas_state = ''
-        if 'gwas_beta' in ctx_df.columns:
+        if args.include_gwas and ('gwas_beta' in ctx_df.columns):
             # Take first non-null
             gb = ctx_df['gwas_beta'].dropna()
             if not gb.empty:
                 gwas_beta = float(gb.iloc[0])
-        if 'gwas_presence_state' in ctx_df.columns:
+        if args.include_gwas and ('gwas_presence_state' in ctx_df.columns):
             gs = ctx_df['gwas_presence_state'].dropna()
             if not gs.empty:
                 gwas_state = str(gs.iloc[0])
@@ -391,6 +417,7 @@ def main():
             cmap = _palette_for_tokens(sorted(list(legend)))
             _draw_tiles(os.path.join(out_dir, f"{cl}_synteny_tiles_products.png"), cl, 'products',
                         samples, matrix, window, ctx_df, cmap, match_flags, meta, gwas_beta, gwas_state,
+                        include_gwas=args.include_gwas, include_absent=args.include_absent,
                         col_w=args.tile_col_w, row_h=args.tile_row_h, dpi=args.dpi)
         if args.mode in ('both', 'clusters'):
             samples, matrix, legend, match_flags, meta = _build_tile_matrix(
@@ -398,9 +425,10 @@ def main():
             cmap = _palette_for_tokens(sorted(list(legend)))
             _draw_tiles(os.path.join(out_dir, f"{cl}_synteny_tiles_clusters.png"), cl, 'clusters',
                         samples, matrix, window, ctx_df, cmap, match_flags, meta, gwas_beta, gwas_state,
+                        include_gwas=args.include_gwas, include_absent=args.include_absent,
                         col_w=args.tile_col_w, row_h=args.tile_row_h, dpi=args.dpi)
 
-        print(f"[info] Plotted {cl} (absent included={args.include_absent})")
+        print(f"[info] Plotted {cl} (absent included={args.include_absent}, gwas included={args.include_gwas})")
 
 if __name__ == "__main__":
     main()
