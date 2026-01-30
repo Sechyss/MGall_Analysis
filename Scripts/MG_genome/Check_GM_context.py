@@ -40,6 +40,9 @@ import networkx as nx
 from Bio import SeqIO
 from BCBio import GFF
 from collections import Counter, defaultdict
+# --- Heuristic thresholds for absence causes ---
+GENE_ONLY_MISSING_FRAC = 0.3   # <= this → likely focal gene loss
+REGION_MISSING_FRAC    = 0.7   # >= this → likely region/locus loss
 
 # Set working directory to the GWAS data location
 os.chdir('/home/albertotr/OneDrive/Data/Cambridge_Project/GWAS/')
@@ -635,16 +638,27 @@ def analyze_synteny_for_sig_clusters(sig_clusters: set, window: int = 3):
         expected_neighbors = {c for c, cnt in neighbor_cluster_counts.items()
                               if present_rows and (cnt / len(present_rows)) >= 0.2}
 
+        # Fallbacks if consensus is empty: top-K frequent neighbors, then GML neighbors
+        if not expected_neighbors and neighbor_cluster_counts:
+            K = min(10, max(1, int(len(present_rows) * 0.3)))
+            expected_neighbors = {c for c, _ in neighbor_cluster_counts.most_common(K)}
+        if not expected_neighbors:
+            gml_neigh = gml_neighbors.get(cl, set())
+            if gml_neigh:
+                expected_neighbors = set(list(gml_neigh)[:10])
+
         # Classify absence rows
         for r in contexts:
             if r['status'] == 'ok':
                 r['absence_class'] = ''
+                r['absence_cause'] = ''
                 r['missing_neighbor_fraction'] = ''
                 continue
-            # Skip if we have no consensus
+            # If still no expected neighbors, mark undetermined but keep row
             if not expected_neighbors:
                 r['absence_class'] = 'undetermined'
-                r['missing_neighbor_fraction'] = ''
+                r['absence_cause'] = 'undetermined'
+                r['missing_neighbor_fraction'] = 0.0
                 continue
             # Presence of expected neighbor clusters in Rtab
             sample = r['sample']
@@ -654,10 +668,14 @@ def analyze_synteny_for_sig_clusters(sig_clusters: set, window: int = 3):
                     present_flags.append(int(rtab_df.at[neigh, sample] > 0))
             if not present_flags:
                 r['absence_class'] = 'undetermined'
-                r['missing_neighbor_fraction'] = ''
+                r['absence_cause'] = 'undetermined'
+                r['missing_neighbor_fraction'] = 0.0
                 continue
+
             frac_missing = 1 - (sum(present_flags) / len(present_flags))
             r['missing_neighbor_fraction'] = round(frac_missing, 3)
+
+            # Original class (kept for backward compatibility)
             if r['presence_flag'] == 'present_rtab_only':
                 r['absence_class'] = 'annotation_issue'
             elif frac_missing <= 0.2:
@@ -666,6 +684,20 @@ def analyze_synteny_for_sig_clusters(sig_clusters: set, window: int = 3):
                 r['absence_class'] = 'region_missing'
             else:
                 r['absence_class'] = 'partial_region_loss'
+
+            # New, more interpretable cause
+            if r['presence_flag'] == 'present_rtab_only':
+                r['absence_cause'] = 'annotation_issue'
+            elif frac_missing <= GENE_ONLY_MISSING_FRAC:
+                r['absence_cause'] = 'gene_loss'  # neighbors present → focal loss/natural selection
+            elif frac_missing >= REGION_MISSING_FRAC:
+                # If no contig (NA) or we were near an end when present, treat as assembly/coverage issue
+                if r.get('contig','NA') == 'NA' or r.get('near_contig_end', '') in (1, '1'):
+                    r['absence_cause'] = 'assembly_gap'
+                else:
+                    r['absence_cause'] = 'locus_deletion'  # broad loss with neighbors missing
+            else:
+                r['absence_cause'] = 'partial_deletion'
 
         # Write per-sample contexts for this cluster
         ctx_df = pd.DataFrame(contexts)

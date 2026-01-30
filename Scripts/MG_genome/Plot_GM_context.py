@@ -75,7 +75,8 @@ def _sanitize_token(t):
 def _write_status_table(out_tsv: str, ctx_df: pd.DataFrame):
     """Write reduced sample status table (metadata columns if present)."""
     cols_available = [c for c in [
-        'sample','sample_orig','status','presence_flag','absence_class','missing_neighbor_fraction',
+        'sample','sample_orig','status','presence_flag',
+        'absence_class','absence_cause','missing_neighbor_fraction',
         'gml_neighbors_overlap','near_contig_end','contig','target_id','target_product',
         'gwas_beta','gwas_presence_state','matches_gwas_direction'
     ] if c in ctx_df.columns]
@@ -136,13 +137,14 @@ def _palette_for_tokens(tokens: list[str]):
         color_map[t] = c
     return color_map
 
-# Absence class styling: color, line width, line style
+# Absence cause styling: color, line width, line style
 _ABSENCE_BORDER = {
     'annotation_issue': ('gold', 1.2, 'solid'),
-    'target_only_missing_or_misannotated': ('orange', 1.2, 'solid'),
-    'region_missing': ('black', 1.4, 'solid'),
-    'partial_region_loss': ('purple', 1.2, 'dashed'),
-    'undetermined': ('gray', 1.0, 'dotted')
+    'gene_loss': ('orange', 1.2, 'solid'),
+    'partial_deletion': ('purple', 1.2, 'dashed'),
+    'locus_deletion': ('black', 1.4, 'solid'),
+    'assembly_gap': ('gray', 1.4, 'dashdot'),
+    'undetermined': ('lightgray', 1.0, 'dotted')
 }
 
 def _draw_tiles(
@@ -212,35 +214,28 @@ def _draw_tiles(
             ax.add_patch(plt.Rectangle((window - 0.5, i - 0.5), 1, 1,
                                        fill=False, edgecolor=edge_color, linewidth=1.4))
 
-    # Absent rows full-width border per absence_class (optional)
+    # Absent rows full-width border per absence cause
     if include_absent:
         for i, meta in enumerate(row_meta):
             if meta['status'] == 'ok':
                 continue
-            aclass = meta['absence_class']
-            color, lw, style = _ABSENCE_BORDER.get(aclass, ('gray', 0.8, 'dotted'))
+            akey = meta.get('absence_cause') or meta.get('absence_class')
+            color, lw, style = _ABSENCE_BORDER.get(akey, ('gray', 0.8, 'dotted'))
             ax.add_patch(plt.Rectangle((-0.5, i - 0.5), n_cols, 1,
                                        fill=False, edgecolor=color, linewidth=lw, linestyle=style))
 
-    # Row labels with suffix markers
+    # Row labels (append cause + missFrac)
     ylabels = []
     for s, mf, meta in zip(samples, match_flags, row_meta):
         suffix = ''
         if meta['status'] != 'ok':
-            if meta['absence_class']:
-                suffix += f" [{meta['absence_class']}"
-                if meta['missing_neighbor_fraction'] != '':
-                    suffix += f";missFrac={meta['missing_neighbor_fraction']}]"
-                else:
-                    suffix += "]"
-            else:
-                suffix += " [absent]"
+            cause = meta.get('absence_cause') or meta.get('absence_class') or 'absent'
+            missf = meta.get('missing_neighbor_fraction', '')
+            suffix = f" [{cause}" + (f";missFrac={missf}]" if missf != '' else "]")
         else:
             if include_gwas:
-                if str(mf) == '0':
-                    suffix += " !"
-                elif str(mf) != '1':
-                    suffix += " ?"
+                if str(mf) == '0': suffix = " !"
+                elif str(mf) != '1': suffix = " ?"
         ylabels.append(s + suffix)
     y_fs = 6 if n_rows > 60 else (7 if n_rows > 30 else 8)
     ax.set_yticks(range(n_rows))
@@ -323,13 +318,12 @@ def _draw_absence_summary(out_png: str, cluster: str, ctx_df: pd.DataFrame, dpi:
     sub = ctx_df[ctx_df['status'] != 'ok'].copy()
     if 'missing_neighbor_fraction' not in sub.columns or sub.empty:
         return
-    sub = sub[sub['missing_neighbor_fraction'].apply(lambda x: str(x) != '' and not pd.isna(x))]
-    if sub.empty:
-        return
-    sub['missing_neighbor_fraction'] = sub['missing_neighbor_fraction'].astype(float)
+    # Keep rows even if undetermined; blanks become 0.0
+    sub['missing_neighbor_fraction'] = pd.to_numeric(sub['missing_neighbor_fraction'], errors='coerce').fillna(0.0)
+    hue_col = 'absence_cause' if 'absence_cause' in sub.columns else 'absence_class'
     fig_w = max(8, len(sub) * 0.55)
     fig, ax = plt.subplots(figsize=(fig_w, 3.4))
-    sns.barplot(x='sample', y='missing_neighbor_fraction', hue='absence_class',
+    sns.barplot(x='sample', y='missing_neighbor_fraction', hue=hue_col,
                 data=sub, palette='Set2', dodge=False, ax=ax)
     plt.setp(ax.get_xticklabels(), rotation=70, ha='right', fontsize=7)
     ax.set_ylabel('Missing neighbor fraction')
