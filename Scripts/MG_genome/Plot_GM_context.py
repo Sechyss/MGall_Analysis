@@ -22,6 +22,7 @@ import re
 import argparse
 import pandas as pd
 import numpy as np
+import pickle
 
 # Use a non-interactive backend to avoid Qt/Wayland errors when saving figures
 import matplotlib
@@ -74,7 +75,7 @@ def _sanitize_token(t):
 def _write_status_table(out_tsv: str, ctx_df: pd.DataFrame):
     """Write reduced sample status table (metadata columns if present)."""
     cols_available = [c for c in [
-        'sample','status','presence_flag','absence_class','missing_neighbor_fraction',
+        'sample','sample_orig','status','presence_flag','absence_class','missing_neighbor_fraction',
         'gml_neighbors_overlap','near_contig_end','contig','target_id','target_product',
         'gwas_beta','gwas_presence_state','matches_gwas_direction'
     ] if c in ctx_df.columns]
@@ -359,6 +360,35 @@ def list_clusters(ctx_dir: str):
     return sorted(set(re.sub(r'_synteny\.tsv$', '', f)
                       for f in os.listdir(ctx_dir) if f.endswith('_synteny.tsv')))
 
+def _load_sample_name_map(path: str | None) -> dict:
+    """Load mapping dict: original sample name -> display name (pickle)."""
+    if not path:
+        return {}
+    try:
+        with open(path, 'rb') as f:
+            m = pickle.load(f)
+        if isinstance(m, dict):
+            # Normalize keys/values to strings
+            return {str(k): str(v) for k, v in m.items()}
+        else:
+            print(f"[warn] Sample name dict is not a dict: {type(m)}")
+            return {}
+    except Exception as e:
+        print(f"[warn] Could not load sample name dict from {path}: {e}")
+        return {}
+
+def _apply_sample_map_to_df(ctx_df: pd.DataFrame, sample_map: dict) -> pd.DataFrame:
+    """Replace ctx_df['sample'] using sample_map, preserving original as 'sample_orig'."""
+    if not sample_map or 'sample' not in ctx_df.columns:
+        return ctx_df
+    remapped = ctx_df['sample'].map(lambda s: sample_map.get(str(s), s))
+    if remapped.equals(ctx_df['sample']):
+        return ctx_df
+    out = ctx_df.copy()
+    out['sample_orig'] = out['sample']
+    out['sample'] = remapped
+    return out
+
 def main():
     """CLI entry point: parse args, iterate clusters, generate plots and summary tables."""
     ap = argparse.ArgumentParser(description="Plot synteny context outputs.")
@@ -373,6 +403,10 @@ def main():
     ap.add_argument('--tile-col-w', type=float, default=1.05, help='Inches per context column in tile plots')
     ap.add_argument('--tile-row-h', type=float, default=0.38, help='Inches per sample row in tile plots')
     ap.add_argument('--dpi', type=int, default=220, help='Output DPI for all figures')
+    # Map sample names using dictionary used in Check_GM_context.py
+    ap.add_argument('--sample-name-dict',
+                    default='/home/albertotr/OneDrive/Data/Cambridge_Project/Camille_replacements_foldername.pickle',
+                    help='Pickle file mapping original sample names to display names')
     args = ap.parse_args()
 
     ctx_dir = args.ctx_dir
@@ -383,12 +417,18 @@ def main():
     if not clusters:
         raise SystemExit(f"No *_synteny.tsv files found under {ctx_dir}")
 
+    # Load mapping once
+    sample_map = _load_sample_name_map(args.sample_name_dict)
+
     for cl in clusters:
         try:
             ctx_df, prod_sig, clust_sig, cons_df = _read_cluster_files(ctx_dir, cl)
         except Exception as e:
             print(f"[warn] Skipping {cl}: {e}")
             continue
+
+        # Apply mapping to all downstream figures
+        ctx_df = _apply_sample_map_to_df(ctx_df, sample_map)
 
         _write_status_table(os.path.join(out_dir, f"{cl}_sample_status.tsv"), ctx_df)
         _draw_signature_bars(os.path.join(out_dir, f"{cl}_signature_bars.png"), cl, prod_sig, clust_sig, args.top_n_sigs, dpi=args.dpi)
