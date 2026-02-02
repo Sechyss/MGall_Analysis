@@ -33,6 +33,30 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 
+# Global palette for token tiles (can be overridden via CLI)
+TOKEN_PALETTE = 'tab20'
+# Colorblind-safe (Okabe–Ito) palette
+_OKABE_ITO = [(0.0,0.0,0.0),(0.9,0.6,0.0),(0.35,0.7,0.9),(0.0,0.6,0.5),
+              (0.95,0.9,0.25),(0.0,0.45,0.7),(0.8,0.4,0.0)]
+# Threshold guides (match Check_GM_context.py defaults)
+GENE_ONLY_MISSING_FRAC = 0.3
+REGION_MISSING_FRAC    = 0.7
+
+def _setup_style(style: str = 'white', font_scale: float = 1.10):
+    """Set a clean Seaborn/Matplotlib style for all plots."""
+    sns.set_theme(style=style, context='notebook')
+    sns.set_context('notebook', font_scale=font_scale)
+    matplotlib.rcParams.update({
+        'axes.spines.top': False,
+        'axes.spines.right': False,
+        'axes.titleweight': 'semibold',
+        'axes.titlelocation': 'left',
+        'legend.frameon': False,
+        'figure.facecolor': 'white',
+        'savefig.facecolor': 'white',
+    })
+    return style, font_scale
+
 def _read_cluster_files(ctx_dir: str, cluster: str):
     """Load context + signature + consensus neighbor files for a given cluster."""
     ctx_path = os.path.join(ctx_dir, f"{cluster}_synteny.tsv")
@@ -127,12 +151,17 @@ def _build_tile_matrix(ctx_df: pd.DataFrame, cluster: str, mode: str, window: in
     return samples_order, matrix, legend, match_sorted, meta
 
 def _palette_for_tokens(tokens: list[str]):
-    """Assign colors to tokens (products/clusters)."""
+    """Assign colors to tokens (products/clusters) using a colorblind-safe palette."""
     uniq = [t for t in tokens if t]
-    base = sns.color_palette('tab20', n_colors=min(20, max(1, len(uniq))))
-    if len(uniq) > 20:
-        base += sns.color_palette('husl', n_colors=len(uniq) - 20)
-    color_map = {'': (0.92, 0.92, 0.92)}
+    if TOKEN_PALETTE.lower() == 'okabeito':
+        base = _OKABE_ITO[:]
+        if len(uniq) > len(base):
+            base += sns.color_palette('husl', n_colors=len(uniq) - len(base))
+    else:
+        base = sns.color_palette(TOKEN_PALETTE, n_colors=min(20, max(1, len(uniq))))
+        if len(uniq) > 20:
+            base += sns.color_palette('husl', n_colors=len(uniq) - 20)
+    color_map = {'': (0.95, 0.95, 0.95)}  # lighter for blanks
     for t, c in zip(uniq, base):
         color_map[t] = c
     return color_map
@@ -165,6 +194,7 @@ def _draw_tiles(
     col_w: float = 1.0,
     row_h: float = 0.35,
     dpi: int = 220,
+    fmt: str = 'png',
 ):
     """Render tile plot with optional GWAS direction and absence context annotations.
     col_w: inches per context column, row_h: inches per sample row, dpi: output DPI.
@@ -195,10 +225,10 @@ def _draw_tiles(
     fig_height = max(5.0, n_rows * row_h)
 
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-    # Reserve right margin for legend; a bit of top/bottom for titles/labels
     fig.subplots_adjust(left=0.12, right=1.0 - legend_frac - 0.02, top=0.92, bottom=0.10)
 
-    ax.imshow(img, aspect='auto', interpolation='nearest')
+    im = ax.imshow(img, aspect='auto', interpolation='nearest')
+    im.set_rasterized(True)  # keep text/lines vector in PDF/SVG
 
     # Center tile border = GWAS direction match/mismatch (optional)
     if include_gwas:
@@ -212,7 +242,7 @@ def _draw_tiles(
             else:
                 edge_color = 'red'
             ax.add_patch(plt.Rectangle((window - 0.5, i - 0.5), 1, 1,
-                                       fill=False, edgecolor=edge_color, linewidth=1.4))
+                                       fill=False, edgecolor=edge_color, linewidth=1.8))
 
     # Absent rows full-width border per absence cause
     if include_absent:
@@ -277,20 +307,29 @@ def _draw_tiles(
                                       markeredgecolor=c, linestyle=style, linewidth=lw, markersize=8,
                                       label=f"Absent: {aclass}"))
     if handles:
-        # Place legend into reserved right margin
+        # Use multiple legend columns for readability
+        ncols = min(3, max(1, (len(handles) + 12) // 12))
         ax.legend(handles=handles, bbox_to_anchor=(1.002, 1.0), loc='upper left',
-                  borderaxespad=0., title="Tokens / Annotations")
+                  borderaxespad=0., title="Tokens / Annotations", ncol=ncols)
 
-    plt.savefig(out_png, dpi=dpi, bbox_inches='tight')
+    plt.savefig(out_png, dpi=dpi, format=fmt)
     plt.close()
 
-def _draw_signature_bars(out_png: str, cluster: str, prod_sig: pd.DataFrame, clust_sig: pd.DataFrame, top_n=12, dpi: int = 220):
+def _draw_signature_bars(out_png: str, cluster: str, prod_sig: pd.DataFrame, clust_sig: pd.DataFrame, top_n=12, dpi: int = 220, fmt: str = 'png'):
     """Draw horizontal bar charts for top product and cluster signatures."""
     # Width scales with number of bars, leave room for long labels
     n_bars = max(len(prod_sig.head(top_n)), len(clust_sig.head(top_n)))
     fig_w = max(14, 0.8 * max(8, n_bars))
     fig, axes = plt.subplots(1, 2, figsize=(fig_w, 4.8))
     fig.subplots_adjust(left=0.34, right=0.98, top=0.88, bottom=0.15)
+
+    def _annotate_counts(ax):
+        for p in ax.patches:
+            w = p.get_width()
+            if w > 0:
+                ax.text(w + max(0.5, 0.02*w), p.get_y() + p.get_height()/2,
+                        f"{int(w)}", va='center', ha='left', fontsize=8, color='#333')
+
     if not prod_sig.empty:
         df = prod_sig.copy().sort_values('count', ascending=False).head(top_n)
         axes[0].barh(range(len(df)), df['count'], color='#4C78A8')
@@ -298,6 +337,7 @@ def _draw_signature_bars(out_png: str, cluster: str, prod_sig: pd.DataFrame, clu
         axes[0].set_yticklabels([s[:100] + ('…' if len(s) > 100 else '') for s in df['signature_products']])
         axes[0].invert_yaxis()
         axes[0].set_title('Product signatures')
+        _annotate_counts(axes[0])
     else:
         axes[0].axis('off'); axes[0].set_title('Product signatures (none)')
     if not clust_sig.empty:
@@ -307,46 +347,66 @@ def _draw_signature_bars(out_png: str, cluster: str, prod_sig: pd.DataFrame, clu
         axes[1].set_yticklabels([s[:100] + ('…' if len(s) > 100 else '') for s in df['signature_clusters']])
         axes[1].invert_yaxis()
         axes[1].set_title('Cluster signatures')
+        _annotate_counts(axes[1])
     else:
         axes[1].axis('off'); axes[1].set_title('Cluster signatures (none)')
     fig.suptitle(f"{cluster} signature frequencies", y=0.99)
-    plt.savefig(out_png, dpi=dpi, bbox_inches='tight')
+    plt.savefig(out_png, dpi=dpi, format=fmt)
     plt.close()
 
-def _draw_absence_summary(out_png: str, cluster: str, ctx_df: pd.DataFrame, dpi: int = 220):
+def _draw_absence_summary(out_png: str, cluster: str, ctx_df: pd.DataFrame, dpi: int = 220, fmt: str = 'png'):
     """Plot missing_neighbor_fraction for absent samples (if available)."""
     sub = ctx_df[ctx_df['status'] != 'ok'].copy()
     if 'missing_neighbor_fraction' not in sub.columns or sub.empty:
         return
-    # Keep rows even if undetermined; blanks become 0.0
     sub['missing_neighbor_fraction'] = pd.to_numeric(sub['missing_neighbor_fraction'], errors='coerce').fillna(0.0)
     hue_col = 'absence_cause' if 'absence_cause' in sub.columns else 'absence_class'
-    fig_w = max(8, len(sub) * 0.55)
-    fig, ax = plt.subplots(figsize=(fig_w, 3.4))
-    sns.barplot(x='sample', y='missing_neighbor_fraction', hue=hue_col,
-                data=sub, palette='Set2', dodge=False, ax=ax)
-    plt.setp(ax.get_xticklabels(), rotation=70, ha='right', fontsize=7)
-    ax.set_ylabel('Missing neighbor fraction')
+    pal = {k: c for k, (c, _, _) in _ABSENCE_BORDER.items()}
+    sub['missing_pct'] = (sub['missing_neighbor_fraction'] * 100.0).clip(0, 100)
+    # Sort by cause, then descending missing
+    sub = sub.sort_values([hue_col, 'missing_pct'], ascending=[True, False])
+
+    fig_w = max(10, len(sub) * 0.60)
+    fig, ax = plt.subplots(figsize=(fig_w, 3.8))
+    sns.barplot(x='sample', y='missing_pct', hue=hue_col, data=sub, palette=pal, dodge=False, ax=ax)
+    plt.setp(ax.get_xticklabels(), rotation=65, ha='right', fontsize=8)
+    ax.set_ylabel('Missing neighbor fraction (%)')
     ax.set_xlabel('Sample')
+    ax.set_ylim(0, 100)
+    ax.yaxis.grid(True, linestyle='--', alpha=0.35)
+    # Threshold guides
+    ax.axhline(GENE_ONLY_MISSING_FRAC*100, color='#888', ls='--', lw=0.8)
+    ax.axhline(REGION_MISSING_FRAC*100,  color='#888', ls='--', lw=0.8)
+    # Annotate bars
+    for p in ax.patches:
+        h = p.get_height()
+        if h >= 8:
+            ax.text(p.get_x() + p.get_width()/2, h + 2, f"{h:.0f}%", ha='center', va='bottom', fontsize=8, color='#333')
     ax.set_title(f"{cluster} absence context")
-    fig.subplots_adjust(left=0.12, right=0.98, top=0.90, bottom=0.42)
-    plt.savefig(out_png, dpi=dpi, bbox_inches='tight')
+    fig.subplots_adjust(left=0.12, right=0.98, top=0.90, bottom=0.40)
+    plt.savefig(out_png, dpi=dpi, format=fmt)
     plt.close()
 
-def _draw_consensus_neighbors(out_png: str, cluster: str, cons_df: pd.DataFrame, dpi: int = 220):
+def _draw_consensus_neighbors(out_png: str, cluster: str, cons_df: pd.DataFrame, dpi: int = 220, fmt: str = 'png'):
     """Plot frequencies of consensus neighbor clusters among present samples."""
     if cons_df.empty:
         return
     df = cons_df.copy().sort_values('frequency', ascending=False)
-    fig_w = max(8, len(df) * 0.55)
-    fig, ax = plt.subplots(figsize=(fig_w, 3.2))
+    fig_w = max(10, len(df) * 0.60)
+    fig, ax = plt.subplots(figsize=(fig_w, 3.4))
     sns.barplot(x='neighbor_cluster', y='frequency', data=df, color='#7E57C2', ax=ax)
-    plt.setp(ax.get_xticklabels(), rotation=70, ha='right', fontsize=7)
+    plt.setp(ax.get_xticklabels(), rotation=68, ha='right', fontsize=7)
     ax.set_ylabel('Frequency among present samples')
     ax.set_xlabel('Neighbor cluster')
+    # Annotate counts
+    for p in ax.patches:
+        h = p.get_height()
+        if h > 0:
+            ax.text(p.get_x() + p.get_width()/2, h + max(0.5, 0.02*h), f"{int(h)}",
+                    ha='center', va='bottom', fontsize=7, color='#333')
     ax.set_title(f"{cluster} consensus neighbor clusters")
     fig.subplots_adjust(left=0.12, right=0.98, top=0.90, bottom=0.42)
-    plt.savefig(out_png, dpi=dpi, bbox_inches='tight')
+    plt.savefig(out_png, dpi=dpi, format=fmt)
     plt.close()
 
 def list_clusters(ctx_dir: str):
@@ -396,12 +456,19 @@ def main():
     # New sizing controls
     ap.add_argument('--tile-col-w', type=float, default=1.05, help='Inches per context column in tile plots')
     ap.add_argument('--tile-row-h', type=float, default=0.38, help='Inches per sample row in tile plots')
-    ap.add_argument('--dpi', type=int, default=220, help='Output DPI for all figures')
-    # Map sample names using dictionary used in Check_GM_context.py
-    ap.add_argument('--sample-name-dict',
-                    default='/home/albertotr/OneDrive/Data/Cambridge_Project/Camille_replacements_foldername.pickle',
-                    help='Pickle file mapping original sample names to display names')
+    ap.add_argument('--dpi', type=int, default=300, help='Output DPI for all figures')
+    ap.add_argument('--style', choices=['white', 'whitegrid', 'ticks', 'darkgrid'], default='white', help='Seaborn style')
+    ap.add_argument('--font-scale', type=float, default=1.10, help='Global font scale')
+    ap.add_argument('--token-palette', default='okabeito', help='Palette for token tiles (e.g., okabeito, tab20, Paired)')
+    ap.add_argument('--format', choices=['png','pdf','svg'], default='png', help='Figure output format')
+    ap.add_argument('--sample-name-dict', dest='sample_name_dict', default=None,
+                    help='Pickle mapping original sample name -> display name (from Check_GM_context.py)')
     args = ap.parse_args()
+
+    # Apply global style and palette
+    _setup_style(style=args.style, font_scale=args.font_scale)
+    global TOKEN_PALETTE
+    TOKEN_PALETTE = args.token_palette
 
     ctx_dir = args.ctx_dir
     out_dir = args.out_dir or os.path.join(ctx_dir, 'plots')
@@ -412,7 +479,7 @@ def main():
         raise SystemExit(f"No *_synteny.tsv files found under {ctx_dir}")
 
     # Load mapping once
-    sample_map = _load_sample_name_map(args.sample_name_dict)
+    sample_map = _load_sample_name_map(getattr(args, 'sample_name_dict', None))
 
     for cl in clusters:
         try:
@@ -425,10 +492,13 @@ def main():
         ctx_df = _apply_sample_map_to_df(ctx_df, sample_map)
 
         _write_status_table(os.path.join(out_dir, f"{cl}_sample_status.tsv"), ctx_df)
-        _draw_signature_bars(os.path.join(out_dir, f"{cl}_signature_bars.png"), cl, prod_sig, clust_sig, args.top_n_sigs, dpi=args.dpi)
+        _draw_signature_bars(os.path.join(out_dir, f"{cl}_signature_bars.{args.format}"), cl, prod_sig, clust_sig,
+                             args.top_n_sigs, dpi=args.dpi, fmt=args.format)
         if args.include_absent:
-            _draw_absence_summary(os.path.join(out_dir, f"{cl}_absence_summary.png"), cl, ctx_df, dpi=args.dpi)
-        _draw_consensus_neighbors(os.path.join(out_dir, f"{cl}_consensus_neighbors.png"), cl, cons_df, dpi=args.dpi)
+            _draw_absence_summary(os.path.join(out_dir, f"{cl}_absence_summary.{args.format}"), cl, ctx_df,
+                                  dpi=args.dpi, fmt=args.format)
+        _draw_consensus_neighbors(os.path.join(out_dir, f"{cl}_consensus_neighbors.{args.format}"), cl, cons_df,
+                                  dpi=args.dpi, fmt=args.format)
 
         window = _auto_window(ctx_df)
 
@@ -449,18 +519,18 @@ def main():
             samples, matrix, legend, match_flags, meta = _build_tile_matrix(
                 ctx_df.copy(), cl, 'products', window, include_absent=args.include_absent)
             cmap = _palette_for_tokens(sorted(list(legend)))
-            _draw_tiles(os.path.join(out_dir, f"{cl}_synteny_tiles_products.png"), cl, 'products',
-                        samples, matrix, window, ctx_df, cmap, match_flags, meta, gwas_beta, gwas_state,
-                        include_gwas=args.include_gwas, include_absent=args.include_absent,
-                        col_w=args.tile_col_w, row_h=args.tile_row_h, dpi=args.dpi)
+            _draw_tiles(os.path.join(out_dir, f"{cl}_synteny_tiles_products.{args.format}"), cl, 'products',
+                    samples, matrix, window, ctx_df, cmap, match_flags, meta, gwas_beta, gwas_state,
+                    include_gwas=args.include_gwas, include_absent=args.include_absent,
+                    col_w=args.tile_col_w, row_h=args.tile_row_h, dpi=args.dpi, fmt=args.format)
         if args.mode in ('both', 'clusters'):
             samples, matrix, legend, match_flags, meta = _build_tile_matrix(
                 ctx_df.copy(), cl, 'clusters', window, include_absent=args.include_absent)
             cmap = _palette_for_tokens(sorted(list(legend)))
             _draw_tiles(os.path.join(out_dir, f"{cl}_synteny_tiles_clusters.png"), cl, 'clusters',
-                        samples, matrix, window, ctx_df, cmap, match_flags, meta, gwas_beta, gwas_state,
-                        include_gwas=args.include_gwas, include_absent=args.include_absent,
-                        col_w=args.tile_col_w, row_h=args.tile_row_h, dpi=args.dpi)
+                    samples, matrix, window, ctx_df, cmap, match_flags, meta, gwas_beta, gwas_state,
+                    include_gwas=args.include_gwas, include_absent=args.include_absent,
+                    col_w=args.tile_col_w, row_h=args.tile_row_h, dpi=args.dpi, fmt=args.format)
 
         print(f"[info] Plotted {cl} (absent included={args.include_absent}, gwas included={args.include_gwas})")
 
