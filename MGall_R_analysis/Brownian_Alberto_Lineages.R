@@ -76,7 +76,6 @@ lnL <- function(params,x,invA,n,rtt)
 	lnL
 }
 
-	n <- length(x)
 
 # Read lineage taxa lists
 l1 <- trimws(readLines('leaves_L1.txt'))
@@ -112,24 +111,62 @@ analyze_lineage <- function(leaves, label) {
 	# Run optimization
 	res <- doopt(x, tre_sub)
 
-	# Plot lineage-specific virulence vs dates
-	graphics.off()
-	windows(width=7, height=5)
-	x_plot <- x[match(names(dates), names(x))]
-	plot(dates, x_plot, pch=19, col='#00808080', main=paste('Lineage', label))
-	cf <- coef(lm(x_plot ~ dates))
-	lines(range(dates), cf[1] + range(dates) * cf[2])
-	mtext(side=3, substitute(paste(ZZ,': (',hat(lambda),' = ',XX,'; ',italic(p),'=',YY,')'),
-		  list(ZZ=paste('Lineage', label, 'virulence index'),
-			   XX=round(res$lam, 3), YY=round(res$p, 4))))
-
-	invisible(res)
+	# Return data for combined plotting
+	list(res=res, x=x, dates=dates, label=label)
 }
 
 # Run analysis per lineage
 res_L1 <- analyze_lineage(l1, 'L1')
 res_L2 <- analyze_lineage(l2, 'L2')
 
+# Combined plot for both lineages
+if (!is.null(res_L1) || !is.null(res_L2)) {
+	graphics.off()
+	windows(width=8, height=6)
+
+	# Prepare data
+	d1 <- if (!is.null(res_L1)) res_L1$dates else NULL
+	d2 <- if (!is.null(res_L2)) res_L2$dates else NULL
+	x1 <- if (!is.null(res_L1)) res_L1$x[match(names(d1), names(res_L1$x))] else NULL
+	x2 <- if (!is.null(res_L2)) res_L2$x[match(names(d2), names(res_L2$x))] else NULL
+
+	d_all <- c(d1, d2)
+	x_all <- c(x1, x2)
+
+	# Create empty plot with combined ranges
+	plot(range(d_all, na.rm=TRUE), range(x_all, na.rm=TRUE), type='n',
+		 xlab='Sampling year', ylab='Normalized virulence',
+		 main='Virulence vs sampling year (L1 blue, L2 orange)')
+
+	# Plot points
+	if (!is.null(d1)) points(d1, x1, pch=19, col='blue')
+	if (!is.null(d2)) points(d2, x2, pch=19, col='orange')
+
+	# Regression lines per lineage
+	if (!is.null(d1)) {
+		cf1 <- coef(lm(x1 ~ d1))
+		lines(range(d1, na.rm=TRUE), cf1[1] + range(d1, na.rm=TRUE) * cf1[2], col='blue', lwd=2)
+	}
+	if (!is.null(d2)) {
+		cf2 <- coef(lm(x2 ~ d2))
+		lines(range(d2, na.rm=TRUE), cf2[1] + range(d2, na.rm=TRUE) * cf2[2], col='orange', lwd=2)
+	}
+
+	legend('topleft', legend=c('Lineage 1','Lineage 2'), col=c('blue','orange'),
+		   pch=19, lwd=2, bty='n')
+
+	# Summary text
+	if (!is.null(res_L1) && !is.null(res_L2)) {
+		mtext(side=3, paste('L1: lambda=', round(res_L1$res$lam,3), ', p=', round(res_L1$res$p,4),
+							' | L2: lambda=', round(res_L2$res$lam,3), ', p=', round(res_L2$res$p,4), sep=''))
+	} else if (!is.null(res_L1)) {
+		mtext(side=3, paste('L1: lambda=', round(res_L1$res$lam,3), ', p=', round(res_L1$res$p,4), sep=''))
+	} else if (!is.null(res_L2)) {
+		mtext(side=3, paste('L2: lambda=', round(res_L2$res$lam,3), ', p=', round(res_L2$res$p,4), sep=''))
+	}
+}
+
+# Console summary
 cat('\nSummary:\n')
-if (!is.null(res_L1)) cat('L1: lambda=', round(res_L1$lam,3), '; p=', round(res_L1$p,4), '; anc=', round(res_L1$anc,3), '\n', sep='')
-if (!is.null(res_L2)) cat('L2: lambda=', round(res_L2$lam,3), '; p=', round(res_L2$p,4), '; anc=', round(res_L2$anc,3), '\n', sep='')
+if (!is.null(res_L1)) cat('L1: lambda=', round(res_L1$res$lam,3), '; p=', round(res_L1$res$p,4), '\n', sep='')
+if (!is.null(res_L2)) cat('L2: lambda=', round(res_L2$res$lam,3), '; p=', round(res_L2$res$p,4), '\n', sep='')
