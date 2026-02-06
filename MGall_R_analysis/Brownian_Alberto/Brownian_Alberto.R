@@ -75,8 +75,8 @@ graphics.off()
 layout(matrix(1:2,2,1))
 plot(dates,x,pch=19,col='#00808080')
 
-#plot(dates,meanswel,pch=19,col='#00808080')
-#stop()
+plot(dates,meanswel,pch=19,col='#00808080')
+stop()
 
 #### The loglikelihood function... ####
 lnL <- function(params,x,invA,n,rtt)
