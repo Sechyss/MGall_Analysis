@@ -173,7 +173,42 @@ clustering_dend.ax_heatmap.set_yticklabels(
     fontsize=8, 
     fontweight='bold'  # Set rows in bold
 )
+
+# Add legend for row colors (Gene clusters)
+from matplotlib.patches import Patch
+row_legend_handles = [
+    Patch(facecolor=cluster_colors["Cas9 protein"], label="Cas9 protein"),
+    Patch(facecolor=cluster_colors["Motility genes"], label="Motility genes"),
+    Patch(facecolor=cluster_colors["Lipoprotein"], label="Lipoprotein"),
+    Patch(facecolor=cluster_colors["non_cluster"], label="Other genes")
+]
+row_legend = clustering_dend.ax_heatmap.legend(
+    handles=row_legend_handles,
+    title="Gene Category",
+    loc="upper left",
+    bbox_to_anchor=(1.02, 1),
+    frameon=True,
+    fontsize=12,
+    title_fontsize=14
+)
+clustering_dend.ax_heatmap.add_artist(row_legend)
+
+# Add legend for column colors (Groups)
+col_legend_handles = [
+    Patch(facecolor=lineage_colors["lineage1"], label="Group 1"),
+    Patch(facecolor=lineage_colors["lineage2"], label="Group 2")
+]
+col_legend = clustering_dend.ax_heatmap.legend(
+    handles=col_legend_handles,
+    title="Sample Groups",
+    loc="upper left",
+    bbox_to_anchor=(1.02, 0.8),
+    frameon=True,
+    fontsize=12,
+    title_fontsize=14
+)
+
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.png', dpi=600, bbox_inches='tight')
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.pdf', dpi=600, bbox_inches='tight')
-plt.show()
+plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.svg', dpi=600, bbox_inches='tight')
 # %%
