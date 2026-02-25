@@ -154,27 +154,33 @@ row_colors = binary_matrix.index.to_series().map(
 )
 
 #%% Create the heatmap and clustering of data
-fig, ax = plt.subplots(figsize=(60, 60))
+# Remove the standalone figure creation - clustermap creates its own
 clustering_dend = sns.clustermap(binary_matrix, metric="euclidean", method="ward", 
                                  col_colors=col_colors, row_colors=row_colors,
                                  col_cluster=False, row_cluster=True,
                                  xticklabels=True, yticklabels=True,
                                  cmap="YlGnBu", 
-                                 figsize=(60, 60))
-clustering_dend.cax.set_visible(False)
+                                 figsize=(60, 60),
+                                 dendrogram_ratio=(0.1, 0.05),  # Reduce dendrogram size (row, col)
+                                 cbar_pos=None)  # Remove colorbar completely
+
+# Adjust the layout to reduce top space
+clustering_dend.ax_row_dendrogram.set_visible(True)
+clustering_dend.ax_col_dendrogram.set_visible(False)  # Hide column dendrogram since col_cluster=False
+
 # Reduce the font size of the x-axis labels
 clustering_dend.ax_heatmap.set_xticklabels(
     clustering_dend.ax_heatmap.get_xticklabels(), 
     fontsize=10, 
-    fontweight='bold'  # Set columns in bold
+    fontweight='bold'
 )
 clustering_dend.ax_heatmap.set_yticklabels(
     clustering_dend.ax_heatmap.get_yticklabels(), 
     fontsize=8, 
-    fontweight='bold'  # Set rows in bold
+    fontweight='bold'
 )
 
-# Add legend for row colors (Gene clusters)
+# Add legend for row colors (Gene clusters) - BIGGER FONTS
 from matplotlib.patches import Patch
 row_legend_handles = [
     Patch(facecolor=cluster_colors["Cas9 protein"], label="Cas9 protein"),
@@ -182,33 +188,37 @@ row_legend_handles = [
     Patch(facecolor=cluster_colors["Lipoprotein"], label="Lipoprotein"),
     Patch(facecolor=cluster_colors["non_cluster"], label="Other genes")
 ]
-row_legend = clustering_dend.ax_heatmap.legend(
-    handles=row_legend_handles,
-    title="Gene Category",
-    loc="upper left",
-    bbox_to_anchor=(1.02, 1),
-    frameon=True,
-    fontsize=12,
-    title_fontsize=14
-)
-clustering_dend.ax_heatmap.add_artist(row_legend)
 
-# Add legend for column colors (Groups)
+# Add legend for column colors (Groups) - BIGGER FONTS
 col_legend_handles = [
     Patch(facecolor=lineage_colors["lineage1"], label="Group 1"),
     Patch(facecolor=lineage_colors["lineage2"], label="Group 2")
 ]
-col_legend = clustering_dend.ax_heatmap.legend(
-    handles=col_legend_handles,
-    title="Sample Groups",
-    loc="upper left",
-    bbox_to_anchor=(1.02, 0.8),
+
+# Combine both legends and place at top
+all_handles = row_legend_handles + col_legend_handles
+all_labels = ["Cas9 protein", "Motility genes", "Lipoprotein", "Other genes", "Group 1", "Group 2"]
+
+# Create a single legend at the top of the figure
+fig = clustering_dend.fig
+fig.legend(
+    handles=all_handles,
+    labels=all_labels,
+    loc='upper center',
+    bbox_to_anchor=(0.5, 0.98),
+    ncol=6,  # All items in one row
     frameon=True,
-    fontsize=12,
-    title_fontsize=14
+    fontsize=42,  # Much bigger font for supplemental material
+    title="Gene Categories & Sample Groups",
+    title_fontsize=50,
+    edgecolor='black',
+    fancybox=True,
+    shadow=True
 )
+
+# Adjust subplot positions to reduce top whitespace and make room for legend
+clustering_dend.gs.update(top=0.92, bottom=0.05, left=0.05, right=0.95)
 
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.png', dpi=600, bbox_inches='tight')
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.pdf', dpi=600, bbox_inches='tight')
 plt.savefig(f'{base_path}/Lineage_differences/Presence_absence_binary_matrix_clustering.svg', dpi=600, bbox_inches='tight')
-# %%
