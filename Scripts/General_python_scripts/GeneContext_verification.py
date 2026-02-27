@@ -1,3 +1,20 @@
+"""
+Verify and visualise gene context (synteny neighbourhood) around target loci.
+
+Parses GFF annotation files and a presence/absence summary table to build
+neighbourhood diagrams for a set of query genes.  For each query, the flanking
+coding sequences are extracted, mapped through a replacement-value dictionary
+to standardised product/cluster names, and drawn as a linear genomic feature
+diagram using dna_features_viewer.
+
+Usage:
+    Update the path variables and target gene list inside the script, then run:
+        python GeneContext_verification.py
+
+Outputs:
+    - Per-gene PNG/SVG context diagrams (one per query locus)
+"""
+
 import os
 
 import numpy as np

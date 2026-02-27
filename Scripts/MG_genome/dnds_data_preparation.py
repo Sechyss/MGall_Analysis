@@ -1,4 +1,20 @@
 #%% Import necessary libraries and collection of the data
+"""
+Prepare codon-level alignments for dN/dS (Ka/Ks) ratio estimation.
+
+Parses a reference GFF to extract CDS coordinates, reads multi-sample FASTA
+consensus sequences, slices coding sequences for each annotated gene, and
+produces codon-aligned FASTA files ready for dN/dS calculation tools
+(e.g. PAML, HyPhy).
+
+Usage:
+    Update the GFF path and alignment file paths inside the script, then run:
+        python dnds_data_preparation.py
+
+Outputs:
+    - Per-gene codon alignment FASTA files for dN/dS analysis
+"""
+
 from BCBio import GFF
 from Bio import AlignIO, Align
 from Bio.Seq import Seq

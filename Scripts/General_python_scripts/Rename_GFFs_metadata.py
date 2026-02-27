@@ -1,3 +1,21 @@
+"""
+Rename genome FASTA files to use standardised sample identifiers.
+
+Reads metadata from an SRA run table and an NCBI data-summary TSV to map
+accession-based filenames to human-readable strain names, then renames the
+.fna files in place.  A counter suffix is appended when name collisions occur.
+
+Usage:
+    Update the directory path (os.chdir) and metadata file paths inside the
+    script, then run:
+        python Rename_GFFs_metadata.py
+
+Notes:
+    - Expects .fna files named by assembly accession (e.g. GCA_XXXXXXXX.fna)
+      in the working directory.
+    - Spaces and forward-slashes in strain names are converted to underscores.
+"""
+
 import os
 import pandas as pd
 

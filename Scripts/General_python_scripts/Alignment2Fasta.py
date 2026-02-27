@@ -1,3 +1,23 @@
+"""
+Split a multi-sequence FASTA alignment into individual per-sample FASTA files.
+
+Reads a FASTA alignment and writes one file per sequence record to the specified
+output directory.  A tab-delimited list file mapping sample IDs to output paths
+is also created for downstream use (e.g., as Gubbins input list).
+
+Usage:
+    python Alignment2Fasta.py -i <input.fasta> -o <output_dir> -l <list_file.txt>
+
+Arguments:
+    -i / --input       Path to input FASTA alignment file.
+    -o / --output_dir  Directory where individual FASTA files will be written.
+    -l / --list_file   Path to output list file (TSV with ID and file path columns).
+
+Outputs:
+    - <output_dir>/<sample_id>.fasta  for each sequence in the input alignment
+    - <list_file>  tab-separated list: sample_id <tab> absolute_path
+"""
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import os

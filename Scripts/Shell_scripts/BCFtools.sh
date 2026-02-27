@@ -1,4 +1,21 @@
 #!/bin/bash
+#
+# BCFtools.sh — Generate consensus FASTA sequences from BAM files.
+#
+# For each BAM file in the mapped-output directory, this script:
+#   1. Runs bcftools mpileup + call to produce a VCF of variant calls.
+#   2. Filters to SNPs with QUAL >= 10 (indels excluded).
+#   3. Compresses and indexes the VCF with bgzip/bcftools index.
+#   4. Applies the variants to the reference with bcftools consensus to
+#      generate a per-sample FASTA consensus sequence.
+#
+# Already-processed samples (existing .fasta output) are skipped.
+#
+# Usage:
+#   bash BCFtools.sh
+#
+# Requirements: bcftools (>=1.9), bgzip, samtools
+# Reference: VA94_7994_1_7P.fna
 
 cd ~/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/VCF_files || exit
 

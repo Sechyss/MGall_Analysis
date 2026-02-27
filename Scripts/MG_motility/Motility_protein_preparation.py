@@ -1,3 +1,22 @@
+"""
+Build a protein sequence database from Prokka annotations for motility analysis.
+
+Iterates over all *_prokka directories in the SPAdes assembly output, reads
+the per-sample .ffn nucleotide gene files, and concatenates them into a
+single FASTA database (Lucy_protein_db.fna).  A subsequent section filters
+the database to retain only sequences with BLASTp hits to known motility
+protein candidates.
+
+Usage:
+    Update os.chdir() and output file paths at the top of the script,
+    then run:
+        python Motility_protein_preparation.py
+
+Outputs:
+    - Lucy_protein_db.fna          All nucleotide gene sequences (concatenated)
+    - Motility_candidates_db.fna   Subset matching BLASTp motility hits
+"""
+
 import os
 import pandas as pd
 from Bio import SeqIO

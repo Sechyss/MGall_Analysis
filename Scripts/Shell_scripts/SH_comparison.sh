@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+# SH_comparison.sh — Test tree topology hypotheses using IQ-TREE SH/AU tests.
+#
+# Concatenates four alignment variants into a single reference alignment,
+# builds individual ML trees for each variant, then uses IQ-TREE to
+# evaluate the SH (Shimodaira-Hasegawa) and AU (approximately unbiased)
+# topology tests across all candidate trees.
+#
+# Alignment variants compared:
+#   60% occupancy threshold  (VA94_consensus_all_trimmed_60threshold.fasta)
+#   80% occupancy threshold  (VA94_consensus_all_trimmed_80threshold.fasta)
+#   Parsimony-informative    (VA94_consensus_all_trimmed_informative_sites.fasta)
+#   No-gaps                  (VA94_consensus_all_trimmed_nogaps.fasta)
+#
+# Usage:
+#   bash SH_comparison.sh
+#   (Run from the directory containing all four alignment FASTA files)
+#
+# Requirements: seqkit, iqtree (>=2.0), conda (for environment switching)
 
 conda activate seqkit
 seqkit concat -o VA94_concatenated_forcomparison.fasta VA94_consensus_all_trimmed_60threshold.fasta VA94_consensus_all_trimmed_80threshold.fasta VA94_consensus_all_trimmed_informative_sites.fasta VA94_consensus_all_trimmed_nogaps.fasta 

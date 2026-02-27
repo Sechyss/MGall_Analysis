@@ -1,3 +1,23 @@
+"""
+Remove gap-only (all-gap) columns from a multiple sequence alignment.
+
+Reads a FASTA alignment and discards any column position where every sequence
+carries a gap character ('-').  The filtered alignment is written to a new FASTA
+file and a CSV recording the removed column positions and nucleotide composition
+is saved alongside the output.
+
+Usage:
+    python Alignment_trimming.py --sequences <input.fasta> --output <output.fasta>
+
+Arguments:
+    --sequences  Path to the input FASTA alignment.
+    --output     Path for the trimmed output FASTA alignment.
+
+Outputs:
+    - <output>                   Trimmed alignment (FASTA)
+    - removed_columns_nogaps.csv CSV of discarded column positions and nucleotides
+"""
+
 from Bio import AlignIO, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord

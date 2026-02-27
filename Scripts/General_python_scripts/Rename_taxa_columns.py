@@ -1,3 +1,21 @@
+"""
+Rename column headers in a tab-delimited file using a sample-name dictionary.
+
+Loads a pre-built name-replacement dictionary (Lucy_replacements.pickle) and
+applies it to the column headers of a TSV/Rtab file.  The modified file is
+saved with an 'Edited_' prefix added to the original filename.
+
+Usage:
+    python Rename_taxa_columns.py --file <input.tsv>
+
+Arguments:
+    --file  Path to the tab-delimited input file whose column names should be
+            replaced.
+
+Outputs:
+    - Edited_<input_filename>  TSV file with updated column headers
+"""
+
 import os
 import pickle
 import argparse

@@ -1,3 +1,23 @@
+"""
+Batch-rename files and directories within a target directory.
+
+Iterates over all files (and, separately, all sub-directories) in the
+specified directory and replaces a given substring in each name with a new
+substring.  Both operations are performed in-place using os.rename.
+
+Usage:
+    python Rename_files.py --directory <path/to/directory>
+
+Arguments:
+    --directory  Path to the directory whose file names should be modified.
+
+Notes:
+    - By default the script strips the '_nophi' suffix from file names.
+      Edit the 'rename_files' call at the bottom to change the target strings.
+    - Only files in the top-level directory are renamed; sub-directories are
+      not traversed recursively.
+"""
+
 import os
 
 if '__main__' == __name__:

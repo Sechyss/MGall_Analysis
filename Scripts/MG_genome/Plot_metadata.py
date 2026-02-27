@@ -1,3 +1,21 @@
+"""
+Visualise sample metadata distributions for the MGall dataset.
+
+Generates summary plots from the project metadata table, including:
+- Geographic/temporal sample distributions
+- Host species breakdowns
+- Lineage composition over time
+
+Used to produce descriptive figures for the manuscript.
+
+Usage:
+    Update the os.chdir() path and metadata file name, then run:
+        python Plot_metadata.py
+
+Outputs:
+    - PNG figure files for each metadata summary plot
+"""
+
 from gettext import dpgettext
 import pandas as pd
 import os

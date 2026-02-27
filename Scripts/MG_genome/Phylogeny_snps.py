@@ -1,4 +1,21 @@
 #%% Import libraries and load data
+"""
+Annotate a phylogenetic tree with SNP-distribution pie charts at each node.
+
+Loads per-sample SNP matrices (Lucy and SRA datasets), maps them onto a
+Gubbins-filtered phylogenetic tree, and renders pie-chart glyphs at each
+internal node and leaf to summarise the proportion of SNPs per functional
+category.  The final annotated tree is exported as a PNG image.
+
+Usage:
+    Update the file paths at the top of the script (snps_lucy, snps_sra,
+    tree file), then run:
+        python Phylogeny_snps.py
+
+Outputs:
+    - Annotated tree PNG with per-node SNP category pie charts
+"""
+
 from ete3 import Tree, TreeStyle, NodeStyle, faces, AttrFace
 import pandas as pd
 import pickle

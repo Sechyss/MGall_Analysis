@@ -1,3 +1,20 @@
+"""
+Compile and summarise viral/defence-system annotations across all samples.
+
+Reads PADLOC (anti-viral defence) and VIBRANT (prophage) output files for
+all sequenced house-finch Mycoplasma gallisepticum genomes and merges the
+results with sample metadata.  Produces consolidated tables of defence
+system and prophage presence/absence across isolates.
+
+Usage:
+    Update the base path and file paths inside the script, then run:
+        python Metadata_Viral_analysis.py
+
+Outputs:
+    - Merged DataFrames of defence system and prophage annotations per sample
+      (written to Excel or CSV as configured at the bottom of the script)
+"""
+
 import pandas as pd
 import os
 import glob

@@ -1,3 +1,18 @@
+# Phylowave.R — Detect and quantify phylogenetic lineages and their fitness.
+#
+# Applies the Phylowave framework (2_Functions/) to a time-calibrated
+# M. gallisepticum phylogeny to:
+#   1. Compute a diversity index across the tree (2_1_Index_computation).
+#   2. Detect emergent lineages using GAM-based significance testing
+#      (2_2_Lineage_detection).
+#   3. Estimate relative fitness for each detected lineage via MCMC
+#      (2_3_Lineage_fitness).
+#
+# Requirements: ape, phytools, mgcv, ggplot2, ggtree, cowplot, cmdstanr,
+#               binom, MetBrewer, parallel, stringr
+# Input:  Time-calibrated tree (.nex) and SNP matrix (update setwd/paths)
+# Output: Lineage assignments, fitness posteriors, and summary plots
+
 # ---- Loading basic data ----
 
 source(file = '2_Functions/2_1_Index_computation_20240909.R')

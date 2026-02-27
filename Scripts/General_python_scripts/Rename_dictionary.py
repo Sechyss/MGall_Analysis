@@ -1,3 +1,28 @@
+"""
+Build and serialise name-replacement dictionaries for Lucy/SRA samples.
+
+Reads sample metadata from an Excel workbook ('Metadata_genomes.xlsx', sheet
+'Lucy_keys') and constructs three mapping dictionaries that translate between
+different sample naming conventions used across the project:
+
+  - Lucy_replacements.pickle         : trelabels  →  Lnames_year
+  - Camille_replacements.pickle      : Lnames_year → final name
+  - Camille_replacements_foldername.pickle : trelabels → final name
+
+Each dictionary is sorted by key length (longest first) to ensure that
+longer substrings are matched before shorter ones during string replacement.
+
+Usage:
+    Update the 'base' path variable to point to your project directory, then
+    run:
+        python Rename_dictionary.py
+
+Outputs:
+    - Lucy_replacements.pickle
+    - Camille_replacements.pickle
+    - Camille_replacements_foldername.pickle
+"""
+
 import pickle
 import pandas as pd
 import os

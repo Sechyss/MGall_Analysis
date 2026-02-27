@@ -1,3 +1,19 @@
+"""
+Calculate AT content ratio over time for Mycoplasma gallisepticum genomes.
+
+Computes the AT ratio (A+T)/(A+T+G+C) from FASTA genome sequences, merges with
+sample collection-date metadata, and produces a scatter/regression plot saved to disk.
+
+Usage:
+    Update the path variables (base, fasta_dir, metadata_file, etc.) to point
+    to your data, then run:
+        python AT_ratio_overtime.py
+
+Outputs:
+    - at_ratio_vs_time.png  (scatter + OLS regression plot)
+    - OLS regression summary printed to console
+"""
+
 import glob
 from Bio import SeqIO
 import pandas as pd

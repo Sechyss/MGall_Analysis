@@ -1,3 +1,22 @@
+"""
+Rename FASTA sequence headers in SRA files using a sample-name dictionary.
+
+Reads sample metadata from an Excel workbook to build a replacement dictionary
+(Lucy internal labels → standardised identifiers), serialises it to a pickle
+file, and then iterates over all *.SRA.fasta files in the target directory,
+writing renamed copies prefixed with 'Edited_'.
+
+Usage:
+    python Rename_taxa_folders.py --directory <path/to/fasta_directory>
+
+Arguments:
+    --directory  Path to the directory containing *.SRA.fasta files.
+
+Outputs:
+    - Lucy_replacements.pickle  Serialised name-replacement dictionary
+    - Edited_<filename>         Renamed FASTA files for each *.SRA.fasta input
+"""
+
 import os
 import pandas as pd
 import pickle

@@ -1,4 +1,20 @@
 #!/usr/bin/env python3
+"""
+Generate a basic Manhattan plot from GWAS summary statistics.
+
+Reads a pre-processed GWAS results file (CHR, BP, P, LOG10P columns as
+produced by Manhattan_prep.py) and draws a genome-wide Manhattan plot with
+alternating chromosome colours and a Bonferroni correction threshold line.
+For a fully annotated plot with gene labels see Manhattan_annotated.py.
+
+Usage:
+    Update the os.chdir() path and input file name, then run:
+        python Manhattan_plot.py
+
+Outputs:
+    - manhattan_plot.png  Genome-wide Manhattan plot (PNG)
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np

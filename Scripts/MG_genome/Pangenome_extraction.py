@@ -1,3 +1,18 @@
+"""
+Extract per-cluster protein sequences from Panaroo gene data.
+
+Reads the Panaroo gene_data.csv table, retrieves the protein sequence for
+each annotation, and appends them to a single FASTA file.  Used to build a
+protein database for downstream analyses (BLAST, HMM scanning, etc.).
+
+Usage:
+    Update the 'database' path and 'filename' output path, then run:
+        python Pangenome_extraction.py
+
+Outputs:
+    - ALL_proteins_pangenome.fasta  All pangenome protein sequences (FASTA)
+"""
+
 import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

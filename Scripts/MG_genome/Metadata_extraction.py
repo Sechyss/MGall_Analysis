@@ -1,3 +1,23 @@
+"""
+Extract and consolidate metadata from NCBI GenBank files and SRA run tables.
+
+Parses GenBank flat files to retrieve accession, collection date, authors,
+journal references, host, location, strain, and biosample IDs for each
+sequenced Mycoplasma gallisepticum genome.  The extracted metadata is then
+combined with the NCBI data-summary TSV, SRA run table, and internal project
+keys and written to a multi-sheet Excel workbook.
+
+Usage:
+    Update os.chdir() and file paths inside the script, then run:
+        python Metadata_extraction.py
+
+Outputs:
+    - Metadata_genomes.xlsx  Multi-sheet Excel workbook containing:
+        * Metadata_NCBI   — GenBank-derived genome metadata
+        * Metadata_SRA    — SRA run information
+        * Metadata_Keys   — Merged metadata with internal project identifiers
+"""
+
 from Bio.SeqIO import parse
 from tqdm import tqdm
 import os

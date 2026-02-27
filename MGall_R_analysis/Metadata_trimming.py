@@ -1,3 +1,19 @@
+"""
+Trim the Brownian-motion metadata table to match a given phylogenetic tree.
+
+Reads the full metadata file (meta.txt) and retains only rows whose
+'final.name' identifier appears as a leaf in the provided tree file.
+Also writes a plain-text list of leaf names for downstream use.
+
+Usage:
+    Update os.chdir() and file paths in main(), then run:
+        python Metadata_trimming.py
+
+Outputs:
+    - meta_L1.txt    Trimmed metadata (rows matching tree leaves)
+    - leaves_L1.txt  Plain-text list of leaf names from the tree
+"""
+
 import os
 import pandas as pd
 from ete3 import Tree

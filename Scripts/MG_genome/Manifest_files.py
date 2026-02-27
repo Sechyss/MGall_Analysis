@@ -1,3 +1,21 @@
+"""
+Generate NCBI submission manifest files with MD5 checksums.
+
+Scans the raw-reads directory for 'Sample_*' folders containing paired-end
+FASTQ files, translates folder names to standardised sample identifiers using
+the Camille replacement dictionary, and builds a manifest DataFrame in the
+format required for ENA/SRA submission.  A second step reads pre-computed
+MD5 sums from an Excel table and incorporates them into the manifest.
+
+Usage:
+    Update 'base' and associated paths, then run:
+        python Manifest_files.py
+
+Outputs:
+    - MGall_Manifest.csv           Initial manifest with filename placeholders
+    - MGall_Manifest_with_MD5.csv  Manifest with actual MD5 checksums
+"""
+
 #%% Import packages
 import os
 import pandas as pd
