@@ -18,6 +18,8 @@
 
 
 
+cd ~/OneDrive/Data/Ipoutcha_motility/BLAST_db/ || exit
+
 for file in ~/OneDrive/Data/Ipoutcha_motility/BLAST_db/*fna; do
   # Extract the filename from the full path
   filename=$(basename "$file")

@@ -19,7 +19,7 @@
 #
 # Requirements: seqkit, iqtree (>=2.0), conda (for environment switching)
 
-
+conda activate seqkit
 seqkit concat -o VA94_concatenated_forcomparison.fasta VA94_consensus_all_trimmed_60threshold.fasta VA94_consensus_all_trimmed_80threshold.fasta VA94_consensus_all_trimmed_informative_sites.fasta VA94_consensus_all_trimmed_nogaps.fasta 
 conda activate Gubbins_env
 iqtree -s ../VA94_consensus_all_trimmed_60threshold.fasta -m GTR+F+I+G4 -T AUTO -B 1000 --prefix VA94_60thr && iqtree -s ../VA94_consensus_all_trimmed_80threshold.fasta -m GTR+F+I+G4 -T AUTO -B 1000 --prefix VA94_80thr && iqtree -s ../VA94_consensus_all_trimmed_informative_sites.fasta -m GTR+F+I+G4 -T AUTO -B 1000 --prefix VA94_infopars && iqtree -s ../VA94_consensus_all_trimmed_nogaps.fasta -m GTR+F+I+G4 -T AUTO -B 1000 --prefix VA94_nogaps
