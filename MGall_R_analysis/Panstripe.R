@@ -1,3 +1,13 @@
+# Panstripe.R — Pangenome gene gain/loss analysis with Panstripe.
+#
+# Fits Panstripe models to the M. gallisepticum pangenome presence/absence
+# matrix to quantify rates of gene gain and loss along the phylogeny and
+# visualises the results as stripe plots with bootstrap confidence intervals.
+#
+# Requirements: panstripe, ape, patchwork
+# Input:  Panaroo presence/absence Rtab and ML phylogeny (update paths below)
+# Output: PNG stripe plots (gene gain/loss rates per lineage)
+
 library(panstripe)
 library(ape)
 library(patchwork)

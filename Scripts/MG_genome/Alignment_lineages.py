@@ -1,3 +1,22 @@
+"""
+Split a whole-dataset alignment into per-lineage sub-alignments.
+
+Reads the Gubbins-masked, threshold-trimmed FASTA alignment for all samples
+and partitions it into two sub-alignments based on pre-defined lineage
+membership lists.  Lineage 2 samples are explicitly listed; all remaining
+samples are assigned to Lineage 1.  Both sub-alignments are written as
+separate FASTA files for downstream phylogenetic or comparative analyses.
+
+Usage:
+    Update the 'sequences', 'output_path1', and 'output_path2' variables at
+    the top/bottom of the script, then run:
+        python Alignment_lineages.py
+
+Outputs:
+    - VA94_lineage1_60threshold.masked.fasta  Lineage 1 sub-alignment
+    - VA94_lineage2_60threshold.masked.fasta  Lineage 2 sub-alignment
+"""
+
 from Bio import AlignIO
 
 # Load sequences

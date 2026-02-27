@@ -1,3 +1,25 @@
+"""
+Generate input file lists for Gubbins from mapped-read FASTA consensus files.
+
+Scans directories containing per-sample *.bam.fasta consensus files (Lucy
+internal samples and SRA-derived samples) and writes tab-delimited list files
+in the format expected by Gubbins:
+    <sample_id> <TAB> <absolute_path_to_fasta>
+
+SRA sample names are translated to standardised identifiers using project
+metadata.
+
+Usage:
+    Update the directory paths inside the script, then run:
+        python Creation_list_input_gubbins.py
+
+Outputs:
+    - List_files_HF_VA94_7994_1_7P.txt     Lucy samples mapped to VA94 reference
+    - List_files_HF_Rlow.txt               Lucy samples mapped to Rlow reference
+    - List_files_HF_SRA_VA94_7994_1_7P.txt SRA samples mapped to VA94 reference
+    - List_files_HF_SRA_Rlow.txt           SRA samples mapped to Rlow reference
+"""
+
 import os
 import pandas as pd
 

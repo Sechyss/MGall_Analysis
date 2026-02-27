@@ -1,4 +1,20 @@
 #!/usr/bin/env python3
+"""
+Reformat raw GWAS output into Manhattan-plot-ready format.
+
+Reads a tab-delimited GWAS results file (variant, …, p-value columns),
+parses the chromosome and base-pair position from the variant identifier
+(expected format: <CHR>_<BP>_<REF>_<ALT>), computes -log10(p), and writes
+a four-column TSV suitable for Manhattan_plot.py or Manhattan_annotated.py.
+
+Usage:
+    Update 'input_file' and 'output_file' variables, then run:
+        python Manhattan_prep.py
+
+Outputs:
+    - <output_file>  TSV with columns: CHR, BP, P, LOG10P
+"""
+
 import math
 import os
 

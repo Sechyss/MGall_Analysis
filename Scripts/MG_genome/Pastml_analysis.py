@@ -1,3 +1,19 @@
+"""
+Run PastML ancestral character reconstruction on a time-calibrated tree.
+
+Applies the PastML pipeline to reconstruct ancestral states for Year,
+Lineage, and Location traits on a BEAST MCC tree.  Outputs are HTML
+visualisations of the compressed and full annotated trees.
+
+Usage:
+    Update the 'data', 'tree', and output HTML path variables, then run:
+        python Pastml_analysis.py
+
+Outputs:
+    - lineage1_metadata_tree.html   Compressed annotated tree (HTML)
+    - lineage1_metadata.html        Full annotated tree (HTML)
+"""
+
 from pastml.acr import pastml_pipeline
 
 data = '/home/albertotr/OneDrive/Data/Cambridge_Project/Mapped_output_SRA_VA94/BEAST/lineage_metadata.csv'

@@ -1,3 +1,21 @@
+"""
+Build a multi-sample FASTA alignment from per-sample VCF-consensus FASTA files.
+
+Iterates over all *.bam.fasta files in the specified directory, reads the
+single consensus sequence from each, renames it using the filename stem, and
+concatenates all records into one multi-sequence FASTA alignment file.
+
+Usage:
+    python Tree_VCF.py --directory <path/to/fasta_dir> --output <alignment.fasta>
+
+Arguments:
+    --directory  Directory containing *.bam.fasta consensus files.
+    --output     Path for the combined output FASTA alignment.
+
+Outputs:
+    - <output>  Multi-sample FASTA alignment (one sequence per input file)
+"""
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import os

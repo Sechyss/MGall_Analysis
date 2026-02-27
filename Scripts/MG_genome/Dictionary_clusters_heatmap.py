@@ -1,3 +1,20 @@
+"""
+Categorise Panaroo gene clusters into functional groups for heatmap annotation.
+
+Scans HMM search results to assign clusters to functional categories
+(lipoproteins, virulence factors, Cas9 candidates, motility genes) and
+writes a combined lookup dictionary to a pickle file.  This dictionary is
+consumed by Pangenome_clustering_heatmap.py to colour-annotate the
+presence/absence heatmap.
+
+Usage:
+    Update 'base_path' to point to your Panaroo results directory, then run:
+        python Dictionary_clusters_heatmap.py
+
+Outputs:
+    - cluster_dict.pickle  {category_name: [cluster_id, ...]} dictionary
+"""
+
 #%% Load libraries and data
 import pickle
 import os

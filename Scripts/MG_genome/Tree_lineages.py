@@ -1,4 +1,23 @@
 #%% Load phylo_env to run this code, it has ete3 installed
+"""
+Cluster tree leaves into lineages using patristic distances.
+
+Loads an IQ-TREE consensus tree, computes the full pairwise patristic
+distance matrix, applies hierarchical clustering (Ward linkage), and
+assigns each leaf to a lineage cluster.  The resulting assignments are
+visualised and can be exported for use in downstream analyses.
+
+Requirements:
+    Run in an environment that includes ete3 (e.g. activate phylo_env).
+
+Usage:
+    Update the tree file path, then run:
+        python Tree_lineages.py
+
+Outputs:
+    - Dendrogram and cluster assignment plots (displayed or saved as PNG)
+    - Lineage-membership dictionary (in-memory or serialised to pickle)
+"""
 
 import random
 

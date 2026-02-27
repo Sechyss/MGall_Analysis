@@ -1,4 +1,19 @@
 #%%
+"""
+Visualise BEAST Skygrid effective population size through time.
+
+Reads a Skygrid summary table (exported from Tracer or a custom BEAST log
+processor) and plots the median Ne trajectory with HPD credible intervals.
+Optionally overlays lineage-specific trajectories for comparative analysis.
+
+Usage:
+    Update the 'data' path and output file name, then run:
+        python SkyGrid_plot.py
+
+Outputs:
+    - Combined_Figures.png  Effective population size and Re trajectory plots
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np

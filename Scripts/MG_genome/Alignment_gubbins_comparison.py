@@ -1,3 +1,20 @@
+"""
+Compare Gubbins-masked alignments from two independent mapping pipelines.
+
+Loads two Gubbins-masked FASTA alignments (Alberto and Lucy pipelines) into
+sequence dictionaries and, for each sample present in the Lucy alignment,
+writes a paired FASTA file containing both the Alberto-derived and
+Lucy-derived consensus so that differences can be inspected manually or
+with alignment tools.
+
+Usage:
+    Update the file paths at the top of the script, then run:
+        python Alignment_gubbins_comparison.py
+
+Outputs:
+    - <output_dir>/<sample_id>.fasta  Paired FASTA for each shared sample
+"""
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from tqdm import tqdm

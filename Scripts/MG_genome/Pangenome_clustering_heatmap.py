@@ -1,9 +1,20 @@
 #%% Import libraries and data
 """
-Created on Tue Oct 31 14:23:00 2023
+Generate a hierarchical clustering heatmap of the pangenome presence/absence matrix.
 
-This script generates a heatmap of the presence-absence binary matrix of the pangenome and columns are group by hyerarchical clustering.
+Reads the Panaroo gene presence/absence matrix, orders samples by lineage
+membership, performs hierarchical clustering on both genes and samples, and
+produces an annotated heatmap.  A cluster-category dictionary (from
+Dictionary_clusters_heatmap.py) is used to colour-annotate gene rows by
+functional category (lipoproteins, virulence, motility, etc.).
 
+Usage:
+    Update 'base_path' and associated paths, then run:
+        python Pangenome_clustering_heatmap.py
+
+Outputs:
+    - Heatmap PNG of gene presence/absence, clustered by gene and sample
+    - Sorted gene list CSV for downstream filtering
 """
 import pandas as pd
 import seaborn as sns

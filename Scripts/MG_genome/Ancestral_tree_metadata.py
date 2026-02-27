@@ -1,3 +1,20 @@
+"""
+Convert a lineage-membership dictionary to a PastML/BEAST metadata CSV.
+
+Loads a pickle dictionary mapping lineage labels to lists of sample IDs
+(formatted as <sample>_<year>), extracts the year from each identifier, and
+writes a CSV with columns [Taxa, Lineage, Year] indexed by taxon name.
+The output is used as metadata input for ancestral-state reconstruction
+(PastML) or dated Bayesian phylogenetic analysis (BEAST).
+
+Usage:
+    Update the pickle path and output CSV path, then run:
+        python Ancestral_tree_metadata.py
+
+Outputs:
+    - lineage_metadata.csv  Metadata table with columns: Lineage, Year (Taxa as index)
+"""
+
 import pickle
 import pandas as pd
 

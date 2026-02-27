@@ -1,4 +1,24 @@
 #%% import of packages and function
+"""
+Filter a Panaroo presence/absence matrix for host-specific gene sets.
+
+Applies frequency-based filters to identify genes present predominantly in
+one host group (e.g. house finch) but absent in another (e.g. poultry),
+or vice versa.  Also extracts the corresponding protein sequences for
+downstream functional analysis.
+
+Key functions:
+    filter_presence_absence()  Filter genes by per-group presence fraction.
+
+Usage:
+    Update 'base_path' and lineage/group membership lists, then run:
+        python Presence_absence_matrix.py
+
+Outputs:
+    - Filtered presence/absence DataFrames (in-memory or saved to CSV)
+    - FASTA files of host-specific gene sequences
+"""
+
 import pandas as pd
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

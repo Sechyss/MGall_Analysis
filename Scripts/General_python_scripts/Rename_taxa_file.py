@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+"""
+Replace taxon names in any text-based file using a serialised dictionary.
+
+Loads a pickle dictionary that maps old sample/taxon identifiers to new ones
+and performs whole-word substitutions throughout a text file (e.g. Newick
+trees, alignment headers, TSV tables).  The edited content is written to a
+new file prefixed with 'Edited_'.
+
+Usage:
+    python Rename_taxa_file.py --file <input_file> --dictionary <replacements.pickle>
+
+Arguments:
+    --file        Path to the text file whose taxon names should be replaced.
+    --dictionary  Path to a pickle file containing a dict {old_name: new_name}.
+
+Outputs:
+    - Edited_<input_filename>  Modified file with updated taxon names
+"""
 import os
 import pickle
 import argparse

@@ -1,3 +1,13 @@
+# Position_segregating_sites.R — Identify and visualise segregating sites in
+#                                 the M. gallisepticum SNP alignment.
+#
+# Uses the ape package to load a VCF-derived alignment, compute the number
+# of segregating sites, and produce summary statistics and plots.
+#
+# Requirements: ape
+# Input:  SNP alignment (FASTA or Newick; update setwd/path)
+# Output: Segregating-site summary statistics and plots
+
 # Load the ape package
 library(ape)
 

@@ -1,3 +1,19 @@
+# Skylineplot.R — Visualise a BEAST Bayesian Skyline/Skygrid analysis.
+#
+# Loads the BEAST MCMC trace log for the full dataset Skygrid analysis,
+# checks convergence (ESS ≥200), extracts HPD credible intervals for the
+# effective population-size trajectory, and produces time-calibrated Ne(t)
+# plots with shaded HPD bands.
+#
+# Requirements: coda, bdskytools, beastio, RColorBrewer
+# Installation (first time only — uncomment lines below):
+#   install.packages(c("devtools","coda","RColorBrewer"))
+#   devtools::install_github("laduplessis/bdskytools")
+#   devtools::install_github("laduplessis/beastio")
+#
+# Input:  BEAST .log file (update setwd/path)
+# Output: Ne(t) Skygrid plot (PNG via knitr/figs/ or direct savePlot)
+
 # Install the required packages by evaluating this chunk
 # (only needs to be evaluated the first time)
 

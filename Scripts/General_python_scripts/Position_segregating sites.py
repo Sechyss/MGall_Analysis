@@ -1,3 +1,21 @@
+"""
+Identify segregating sites in multiple sequence alignments and extract
+per-position read-level data from BAM files.
+
+Reads two FASTA alignments (Lucy and SRA consensus sequences), identifies
+positions that are segregating (variable across samples), and uses pysam to
+query raw read counts at those positions in the corresponding BAM files.
+Results are written to a CSV summary table.
+
+Usage:
+    Update the path variables at the top of the script to point to your data,
+    then run:
+        python "Position_segregating sites.py"
+
+Outputs:
+    - Test_pos.csv  CSV table of segregating site positions and read statistics
+"""
+
 import os
 from Bio import AlignIO
 import pandas as pd

@@ -1,4 +1,19 @@
 #%% Load packages
+"""
+Render a time-calibrated BEAST MCC tree annotated with lineage metadata.
+
+Loads the maximum clade credibility (MCC) tree from a BEAST run (Newick and
+NEXUS formats) together with sample lineage metadata and draws a
+publication-ready tree with colour-coded lineage tips and branch styling.
+
+Usage:
+    Update the tree and metadata file paths, then run:
+        python SkyGrid_tree.py
+
+Outputs:
+    - Annotated tree PNG (rendered via ete3 TreeStyle)
+"""
+
 from ete3 import Tree, TreeStyle, NodeStyle, Nexml
 import pandas as pd
 import os

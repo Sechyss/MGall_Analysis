@@ -1,3 +1,14 @@
+# Skyline_lineages.R — Plot BEAST Skygrid Ne(t) trajectories per lineage.
+#
+# Loads BEAST MCMC trace logs for lineage-specific Skygrid analyses,
+# checks convergence (ESS), extracts HPD intervals, and overlays the
+# effective population-size trajectories for each lineage on a single
+# time-calibrated plot for comparison.
+#
+# Requirements: coda, bdskytools, beastio, RColorBrewer
+# Input:  BEAST .log files for each lineage (update setwd/paths)
+# Output: Combined Ne(t) trajectory plot (PNG)
+
 # Load required packages
 library(coda)
 library(bdskytools)

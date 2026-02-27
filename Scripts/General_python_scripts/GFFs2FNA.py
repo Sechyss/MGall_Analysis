@@ -1,3 +1,20 @@
+"""
+Extract genome FASTA sequences from Prokka GFF files.
+
+Reads the embedded FASTA section from each GFF file in an input directory,
+renames the sequence using a pre-built name-replacement dictionary (Lucy
+sample IDs → standardised identifiers), and writes individual .fna files
+to an output directory.
+
+Usage:
+    Update 'input_folder', 'output_folder', and the path to the replacement
+    pickle file at the bottom of this script, then run:
+        python GFFs2FNA.py
+
+Outputs:
+    - <output_folder>/<new_id>.fna  one per GFF with a matching replacement key
+"""
+
 import os
 import pickle
 from Bio import SeqIO

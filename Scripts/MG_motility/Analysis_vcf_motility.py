@@ -1,3 +1,23 @@
+"""
+Analyse SNPs within motility-related genes across M. gallisepticum samples.
+
+Workflow:
+1. Parses the VA94 reference GFF to map gene IDs to genomic coordinates.
+2. Loads BLASTp results to identify candidate motility genes in the pangenome.
+3. Filters the Panaroo presence/absence matrix to exclude non-motility clusters.
+4. For each motility gene, reads per-sample VCF files (via pysam) to extract
+   variant positions within the gene boundaries.
+5. Builds a per-sample SNP matrix and writes it to a TSV file.
+
+Usage:
+    Update the GFF path, VCF directory, and output path inside the script,
+    then run:
+        python Analysis_vcf_motility.py
+
+Outputs:
+    - Matrix_mutations_SNPs.tsv  Per-gene, per-sample SNP matrix
+"""
+
 #%%
 import os
 

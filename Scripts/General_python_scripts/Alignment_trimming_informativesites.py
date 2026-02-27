@@ -1,3 +1,19 @@
+"""
+Filter a multiple sequence alignment to parsimony-informative sites only.
+
+Identifies columns that are parsimony-informative (at least two distinct
+character states, each present in ≥2 sequences, ignoring gaps) and writes
+a new alignment containing only those columns.
+
+Usage:
+    Update the 'sequences' and 'output_alignment' path variables at the bottom
+    of the script, then run:
+        python Alignment_trimming_informativesites.py
+
+Outputs:
+    - Filtered FASTA alignment retaining only parsimony-informative columns
+"""
+
 from Bio.Align import MultipleSeqAlignment
 from Bio import AlignIO
 from collections import Counter

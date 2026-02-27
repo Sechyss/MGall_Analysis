@@ -1,3 +1,21 @@
+"""
+Convert gene-level .aln.fas alignment files to tree-ready FASTA format.
+
+Iterates over all *.aln.fas files in the specified directory, reformats the
+sequence headers to '<sample_id>_<gene_name>' (splitting on ';' and removing
+problematic '~' characters), and writes the renamed sequences to new .fasta
+files in the same directory.
+
+Usage:
+    python Preparation_trees.py --directory <path/to/alignment_dir>
+
+Arguments:
+    --directory  Directory containing *.aln.fas alignment files.
+
+Outputs:
+    - <gene>.fasta  Renamed alignment file for each *.aln.fas input
+"""
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 import os

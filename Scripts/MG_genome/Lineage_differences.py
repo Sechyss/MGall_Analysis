@@ -1,3 +1,27 @@
+"""
+Identify lineage-specific genes from a Panaroo presence/absence matrix.
+
+Reads the gene presence/absence CSV and filters for genes that are
+predominantly present in one lineage but absent in the other, using
+configurable presence-fraction thresholds.  Results are visualised as
+Venn diagrams and hierarchical heatmaps, and the protein sequences of
+lineage-specific genes are extracted from the pangenome reference FASTA.
+
+Key parameters:
+    filter1  Minimum presence fraction in the target lineage (default: 0.60)
+    filter2  Maximum presence fraction in the opposing lineage (default: 0.30)
+
+Usage:
+    Update 'base_path' and the lineage membership lists, then run:
+        python Lineage_differences.py
+
+Outputs:
+    - Venn diagrams (PNG)
+    - Heatmaps of lineage-specific gene presence/absence (PNG)
+    - FASTA files of lineage-specific protein sequences
+    - Pickle files with lineage gene sets for downstream analyses
+"""
+
 #%% Importing the libraries
 import pickle
 import pandas as pd

@@ -1,3 +1,21 @@
+"""
+Prepare pangenome presence/absence matrix for BEAST bifurcation analysis.
+
+Loads a Panaroo gene presence/absence CSV and gene data table, builds a
+sample-name replacement dictionary from project metadata, renames the
+columns to standardised identifiers, and optionally serialises the renaming
+dictionary.  The cleaned matrix is used as input for ancestral-state
+reconstruction or bifurcation analysis in BEAST.
+
+Usage:
+    Update the file paths at the top of the script, then run:
+        python Analysis_BEAST_bifurcation.py
+
+Outputs:
+    - rename_taxa_dict.pickle  Serialised {old_name: new_name} dictionary
+    - (in-memory) Renamed presence/absence DataFrame for further processing
+"""
+
 import pandas as pd
 import pickle
 

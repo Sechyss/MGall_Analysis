@@ -1,3 +1,29 @@
+"""
+Trim a multiple sequence alignment by removing columns that fall below a
+minimum non-gap occupancy threshold.
+
+For each column, the fraction of sequences with a non-gap character is
+computed.  Columns where that fraction is below the specified threshold are
+discarded.  The retained alignment is written to the output FASTA file and a
+CSV recording removed column positions is saved alongside it.
+
+Usage:
+    python Alignment_trimming_threshold.py \
+        --sequences <input.fasta> \
+        --threshold <float, e.g. 0.8> \
+        --output <output.fasta>
+
+Arguments:
+    --sequences  Path to the input FASTA alignment.
+    --threshold  Minimum fraction (0–1) of non-gap characters required to
+                 retain a column (e.g. 0.8 keeps columns with ≥80% non-gap).
+    --output     Path for the trimmed output FASTA alignment.
+
+Outputs:
+    - <output>                       Trimmed alignment (FASTA)
+    - removed_columns_threshold.csv  CSV of discarded column positions
+"""
+
 from Bio import AlignIO, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
