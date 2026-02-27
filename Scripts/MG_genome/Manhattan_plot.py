@@ -12,7 +12,7 @@ matplotlib.rcParams.update({'font.size': 12})
 plt.style.use('seaborn-v0_8-whitegrid')
 
 # Read the data
-df = pd.read_csv('mortality_manhattan.txt', sep='\t')
+df = pd.read_csv('swelling_manhattan.txt', sep='\t')
 
 # Define colors for alternating chromosomes
 colors = ['#1f77b4', '#ff7f0e']  # blue and orange
@@ -43,21 +43,24 @@ if not significant.empty:
 # Add labels and title
 plt.xlabel('Position (bp)')
 plt.ylabel('-log10(p-value)')
-plt.title('Manhattan Plot for Mortality GWAS')
+plt.title('Manhattan Plot for Swelling GWAS')
 
 # Set y-axis to start at 0
 y_max = max(df['LOG10P'].max() * 1.05, bonferroni_threshold * 1.1)
 plt.ylim([0, y_max])
 
 # Add legend
-plt.legend(loc='upper right')
+plt.legend(loc='upper left')
 
 # Tighten layout
 plt.tight_layout()
 
 # Save figure
-plt.savefig('mortality_manhattan_plot.png', dpi=600)
-print("Plot saved as mortality_manhattan_plot.png")
+plt.savefig('swelling_manhattan_plot.png', dpi=600)
+print("Plot saved as swelling_manhattan_plot.png")
+plt.savefig('swelling_manhattan_plot.svg', dpi=600)
+print("Plot saved as swelling_manhattan_plot.svg")
+plt.savefig('swelling_manhattan_plot.pdf', dpi=600)
+print("Plot saved as swelling_manhattan_plot.pdf")
 
 # Display the plot
-plt.show()

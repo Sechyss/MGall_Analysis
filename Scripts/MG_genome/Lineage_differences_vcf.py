@@ -1,3 +1,12 @@
+"""Analyze lineage-specific SNPs, extract affected genes, and summarize COG functions.
+
+This script:
+- loads SNP annotations and normalizes sample identifiers,
+- defines lineage membership from a reference phylogeny,
+- filters nonsynonymous variants and computes lineage-unique sites,
+- exports lineage-specific gene FASTA sequences,
+- summarizes COG functional categories and plots relative frequencies.
+"""
 #%%
 import os
 

@@ -137,18 +137,17 @@ row_colors = binary_matrix.index.to_series().map(
 
 #%% Alternative to colour different clusters
 # Create a color palette for the clusters
-# Colour gene clusters for Cas9 protein, Motility genes, and Lipoproteins
+# Colour gene clusters for Cas9 protein, Virulence related (Motility + Lipoproteins), and others
 cluster_colors = {
     "Cas9 protein": "#d62728",
-    "Motility genes": "#2ca02c",
-    "Lipoprotein": "#094782",
+    "Virulence related": "#2ca02c",  # Combined Motility + Lipoprotein
     "non_cluster": "#7b49b5"
 }
+
 row_colors = binary_matrix.index.to_series().map(
     lambda x: (
         cluster_colors["Cas9 protein"] if x in cluster_dict.get('Cas9', []) else
-        cluster_colors["Motility genes"] if x in cluster_dict.get('Motility', []) else
-        cluster_colors["Lipoprotein"] if x in cluster_dict.get('Lipoprotein', []) else
+        cluster_colors["Virulence related"] if x in cluster_dict.get('Motility', []) or x in cluster_dict.get('Lipoprotein', []) else
         cluster_colors["non_cluster"]
     )
 )
@@ -184,8 +183,7 @@ clustering_dend.ax_heatmap.set_yticklabels(
 from matplotlib.patches import Patch
 row_legend_handles = [
     Patch(facecolor=cluster_colors["Cas9 protein"], label="Cas9 protein"),
-    Patch(facecolor=cluster_colors["Motility genes"], label="Motility genes"),
-    Patch(facecolor=cluster_colors["Lipoprotein"], label="Lipoprotein"),
+    Patch(facecolor=cluster_colors["Virulence related"], label="Virulence related"),
     Patch(facecolor=cluster_colors["non_cluster"], label="Other genes")
 ]
 
@@ -197,7 +195,7 @@ col_legend_handles = [
 
 # Combine both legends and place at top
 all_handles = row_legend_handles + col_legend_handles
-all_labels = ["Cas9 protein", "Motility genes", "Lipoprotein", "Other genes", "Group 1", "Group 2"]
+all_labels = ["Cas9 protein", "Virulence related", "Other genes", "Group 1", "Group 2"]
 
 # Create a single legend at the top of the figure
 fig = clustering_dend.fig
@@ -206,9 +204,9 @@ fig.legend(
     labels=all_labels,
     loc='upper center',
     bbox_to_anchor=(0.5, 0.98),
-    ncol=6,  # All items in one row
+    ncol=5,  # Updated: 5 items instead of 6
     frameon=True,
-    fontsize=42,  # Much bigger font for supplemental material
+    fontsize=42,
     title="Gene Categories & Sample Groups",
     title_fontsize=50,
     edgecolor='black',
