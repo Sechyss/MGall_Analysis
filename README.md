@@ -4,7 +4,7 @@ Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic ana
 
 **Author**: Dr. Alberto Torcello-Requena  
 **Affiliation**: Environment and Sustainability Institute, University of Exeter  
-**Contact**: <alberto.torcello-requena@exeter.ac.uk>
+**Contact**: <a.torcello-requena@exeter.ac.uk>
 
 ---
 
