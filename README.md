@@ -1,6 +1,6 @@
 # MGall_Analysis
 
-Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic analysis, including genome assembly, annotation, phylogenetics, pangenome analysis, GWAS, and epidemiological modeling.
+Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic analysis, including genome assembly, annotation, phylogenetics, pangenome analysis, GWAS, epidemiological modeling, and advanced phylodynamic inference.
 
 **Author**: Dr. Alberto Torcello-Requena  
 **Affiliation**: Environment and Sustainability Institute, University of Exeter  
@@ -10,7 +10,7 @@ Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic ana
 
 ## Table of Contents
 
-1. Overview
+1. Aim & Description
 2. Repository Structure
 3. Installation & Requirements
 4. Workflow Overview
@@ -22,18 +22,44 @@ Comprehensive bioinformatics pipeline for *Mycoplasma gallisepticum* genomic ana
 
 ---
 
+## Aim & Description
+
+### Project Objectives
+
+This repository provides an end-to-end computational framework for comprehensive genomic analysis of *Mycoplasma gallisepticum* (*Mg*) sampled from wild house finches (*Haemorhous mexicanus*). The pipeline integrates:
+
+- **Population-level inference**: tracking lineage emergence, fitness trajectories, and population dynamics
+- **Genomic characterization**: identifying lineage-defining mutations, virulence-associated variants, and adaptive signatures
+- **Synteny & virulence context**: mapping GWAS-significant loci within genomic neighborhoods to infer functional impacts
+- **Epidemiological prediction**: parameterizing temporal population models from phylogenetic data
+
+### Scientific Context
+
+*Mycoplasma gallisepticum* (*Mg*) is a pathogenic bacterium causing conjunctivitis and respiratory disease in wild and domestic birds. Understanding its genomic evolution, population structure, and virulence determinants is critical for:
+
+- Predicting outbreak dynamics in wild bird populations
+- Identifying lineages with increased transmission or virulence
+- Uncovering molecular mechanisms of disease severity
+- Guiding surveillance and intervention strategies
+
+This pipeline supports research on host-pathogen interactions, evolutionary fitness, and disease ecology by integrating phylogenetic, genomic, and epidemiological data.
+
+---
+
 ## Overview
 
-This repository contains a complete computational pipeline for analyzing *Mycoplasma gallisepticum* genomic data from house finches (*Haemorhous mexicanus*). The analysis spans:
+This repository contains a complete computational pipeline for analyzing *Mycoplasma gallisepticum* genomic data from house finches (*Haemorhous mexicanus*). The analysis integrates:
 
-- **Data management**: Sample manifest generation, metadata extraction, MD5 validation
-- **Genome assembly**: De novo assembly (SPAdes), quality control
-- **Annotation**: Prokka-based structural annotation
-- **Phylogenetics**: Maximum likelihood trees (IQ-TREE), time-calibrated phylogenies (BEAST), recombination detection (Gubbins)
-- **Pangenomics**: Gene presence/absence analysis (Panaroo), lineage-specific genes
-- **Population genetics**: SNP calling, GWAS, Manhattan plots
-- **Virulence analysis**: Phage detection (VIBRANT), defense systems (PADLOC)
-- **Epidemiological modeling**: SEIRS models with parameter sweeps and sensitivity analysis
+- **Data management**: Sample manifest generation, metadata extraction, MD5 validation, SRA data retrieval
+- **Genome assembly**: De novo assembly (SPAdes), quality control with read trimming (Sickle)
+- **Annotation**: Prokka-based structural annotation, protein extraction, gene context analysis
+- **Alignment & filtering**: Sequence alignment trimming, gap removal, parsimony-informative site selection
+- **Phylogenetics**: Maximum likelihood trees (IQ-TREE), time-calibrated phylogenies (BEAST), recombination detection (Gubbins), topology hypothesis testing (SH/AU tests)
+- **Pangenomics**: Gene presence/absence analysis (Panaroo), cluster characterization, lineage-specific gene identification, synteny visualization
+- **Population genetics**: SNP calling (bcftools), GWAS analysis, Manhattan plots with gene annotation, dN/dS analysis
+- **Virulence analysis**: Phage detection (VIBRANT), defense system annotation (PADLOC), motility gene characterization
+- **Phylodynamics**: Bayesian skyline/skygrid plots, lineage fitness estimation, phylogenetic signal analysis, Brownian motion trait evolution
+- **Epidemiological modeling**: Temporal dynamics, effective population size inference, phylowave analysis for selective sweeps
 
 ---
 
@@ -41,84 +67,109 @@ This repository contains a complete computational pipeline for analyzing *Mycopl
 
 ```bash
 MGall_Analysis/
+├── .git/                           # Version control
+├── .gitignore                      # Git ignore rules
 ├── .idea/                          # PyCharm project settings
 ├── .vscode/                        # VS Code settings
-├── MGall_R_analysis/               # R-based analyses
-│   ├── 2_Functions/                # R utility functions
+├── README.md                       # This file
+├── MGall_R_analysis/               # R-based analyses & phylodynamics
+│   ├── 2_Functions/                # Reusable R utility functions
+│   │   ├── 2_1_Index_computation_20240909.R
 │   │   ├── 2_2_Lineage_detection_20240909.R
 │   │   ├── 2_3_Lineage_fitness_20240909.R
 │   │   └── 2_4_Lineage_defining_mutations.R
 │   ├── Brownian_Alberto/           # Brownian motion trait evolution
-│   │   ├── Brownian_Alberto.R
-│   │   └── meta.txt                # Sample metadata
-│   ├── BacDating.R                 # Bayesian dating analysis
-│   ├── Panstripe.R                 # Pangenome stripe plots
-│   ├── Phylowave.R                 # Phylogenetic wave analysis
-│   ├── Position_segregating_sites.R
+│   │   ├── Brownian_Alberto.R      # Main analysis script
+│   │   ├── Brownian_Alberto_original.R
+│   │   ├── Brownian_Alberto_Lineages.R
+│   │   ├── coretree_noR.nwk        # Phylogenetic tree (Newick)
+│   │   ├── Edited_VA94_consensus_all_trimmed_60threshold_50_combined.finaltree.newick
+│   │   ├── leaves_L1.txt           # Lineage 1 sample IDs
+│   │   ├── leaves_L2.txt           # Lineage 2 sample IDs
+│   │   ├── meta_original.txt       # Original metadata
+│   │   └── meta.txt                # Sample metadata (dates, locations, traits)
+│   ├── BacDating.R                 # Bayesian dating analysis (divergence times)
+│   ├── Metadata_trimming.py        # Python utility for metadata processing
+│   ├── MGall_R_analysis.Rproj      # RStudio project file
+│   ├── Panstripe.R                 # Pangenome stripe plots with bootstrap CIs
+│   ├── Phylowave.R                 # Phylogenetic wave analysis (selective sweeps)
+│   ├── Position_segregating_sites.R # Segregating site analysis
 │   ├── Skyline_lineages.R          # Skyline plots per lineage
-│   └── Skylineplot.R               # BEAST skyline plotting
+│   ├── Skylineplot.R               # BEAST skyline plot visualization
+│   └── SNPs_tree_making.r          # SNP matrix tree construction
 ├── Scripts/                        # Python & shell scripts
-│   ├── General_python_scripts/     # General utilities
-│   │   ├── Alignment_trimming.py
-│   │   ├── Alignment_trimming_informativesites.py
-│   │   ├── Alignment2Fasta.py
-│   │   ├── AT_ratio_overtime.py
-│   │   ├── GeneContext_verification.py
-│   │   ├── GFFs2FNA.py
-│   │   ├── Pangenome_translation.py
-│   │   ├── Position_segregating_sites.py
-│   │   ├── Preparation_trees.py
-│   │   ├── Rename_dictionary.py
-│   │   ├── Rename_files.py
-│   │   ├── Rename_GFFs_metadata.py
-│   │   ├── Rename_taxa_columns.py
-│   │   ├── Rename_taxa_folders.py
-│   │   └── Tree_VCF.py
+│   ├── General_python_scripts/     # General-purpose utilities
+│   │   ├── Alignment2Fasta.py      # Convert VCF/other formats to FASTA
+│   │   ├── Alignment_trimming.py   # Remove gap-only columns
+│   │   ├── Alignment_trimming_informativesites.py  # Keep parsimony-informative sites only
+│   │   ├── Alignment_trimming_threshold.py  # Filter by sequence identity threshold
+│   │   ├── AT_ratio_overtime.py    # AT content over time regression
+│   │   ├── GFFs2FNA.py             # Extract sequences from GFF annotations
+│   │   ├── GeneContext_verification.py  # Validate gene neighborhood integrity
+│   │   ├── Pangenome_translation.py  # Translate protein sequences
+│   │   ├── Position_segregating_sites.py  # Extract segregating sites from BAM
+│   │   ├── Preparation_trees.py    # Prepare tree files for analysis
+│   │   ├── Rename_dictionary.py    # Create name replacement dictionaries
+│   │   ├── Rename_files.py         # Batch file renaming
+│   │   ├── Rename_GFFs_metadata.py # Rename GFF coordinate systems
+│   │   ├── Rename_taxa_columns.py  # Rename dataframe columns
+│   │   ├── Rename_taxa_file.py     # Rename sequences in files
+│   │   ├── Rename_taxa_folders.py  # Rename directory structures
+│   │   └── Tree_VCF.py             # Build alignment from VCF files
 │   ├── MG_genome/                  # Core genomic analyses
-│   │   ├── Alignment_lineages.py
-│   │   ├── Ancestral_tree_metadata.py
-│   │   ├── Creation_list_input_gubbins.py
-│   │   ├── Dictionary_clusters_heatmap.py
-│   │   ├── GWAS_results_fasta_results.py
-│   │   ├── Lineage_differences.py
-│   │   ├── Lineage_differences_vcf.py
-│   │   ├── Manhattan_annotated.py
-│   │   ├── Manhattan_plot.py
-│   │   ├── Manhattan_prep.py
-│   │   ├── Manifest_files.py
-│   │   ├── Metadata_extraction.py
-│   │   ├── Metadata_Viral_analysis.py
-│   │   ├── Pangenome_clustering_heatmap.py
-│   │   ├── Pastml_analysis.py
-│   │   ├── Phylogeny_snps.py
-│   │   ├── Presence_absence_matrix.py
-│   │   ├── SkyGrid_plot.py
-│   │   └── SkyGrid_tree.py
-│   ├── MG_motility/                # Motility gene analysis
-│   │   ├── Analysis_vcf_motility.py
-│   │   └── Motility_protein_preparation.py
-│   ├── Shell_scripts/              # Bash pipeline scripts
-│   │   ├── BCFtools.sh             # Consensus calling
-│   │   ├── Download_sra.sh         # SRA data retrieval
-│   │   ├── Gubbins_pipeline.sh     # Recombination detection
-│   │   ├── Lucy_Prokka.sh          # Annotation pipeline
-│   │   ├── Lucy_SPADES_Assembly.sh # De novo assembly
-│   │   ├── Padloc.sh               # Defense system detection
-│   │   ├── Panaroo_pipeline.sh     # Pangenome analysis
-│   │   ├── Poppunk_code.sh         # PopPUNK clustering
-│   │   ├── Prokka_command.sh
-│   │   ├── Prokka_complete_genomes.sh
-│   │   ├── SH_comparison.sh        # Tree topology tests
-│   │   ├── Sickle_readTrimming.sh  # Quality trimming
-│   │   ├── SPADES_Pipeline.sh
-│   │   ├── Tree_formation.sh
-│   │   ├── Treemaking_commands.sh
-│   │   └── Vibrant.sh              # Phage prediction
-│   └── Slurm_scripts/              # HPC cluster scripts
-│       ├── IQ-Tree_slurm.sh
-│       ├── Mgall_mapping_slurm.sh
-│       └── Variant_calling.sh
-└── README.md                       # This file
+│   │   ├── Alignment_gubbins_comparison.py  # Compare pre/post-Gubbins alignments
+│   │   ├── Alignment_lineages.py   # Lineage-specific alignment extraction
+│   │   ├── Analysis_BEAST_bifurcation.py  # Bifurcation timing from BEAST trees
+│   │   ├── Ancestral_tree_metadata.py  # Annotate tree with ancestral states
+│   │   ├── Check_GM_context_COG_mortality.py  # Synteny context (virulence phenotype)
+│   │   ├── Check_GM_context_COG_swelling.py   # Synteny context (alternative phenotype)
+│   │   ├── Creation_list_input_gubbins.py  # Prepare file lists for Gubbins
+│   │   ├── Dictionary_clusters_heatmap.py  # Categorize pangenome clusters (virulence/motility/etc.)
+│   │   ├── dnds_data_preparation.py  # Prepare dN/dS calculation data
+│   │   ├── GWAS_results_fasta_results.py  # Extract GWAS-significant gene sequences
+│   │   ├── Lineage_differences.py  # Identify lineage-specific genes
+│   │   ├── Lineage_differences_vcf.py  # SNP-level lineage differences
+│   │   ├── Manhattan_annotated.py  # Publication-quality Manhattan plots
+│   │   ├── Manhattan_plot.py       # Basic Manhattan plot generation
+│   │   ├── Manhattan_prep.py       # Prepare GWAS data for plotting
+│   │   ├── Manifest_files.py       # Generate NCBI submission manifest
+│   │   ├── Metadata_extraction.py  # Extract metadata from GenBank/SRA
+│   │   ├── Metadata_Viral_analysis.py  # Phage/prophage metadata integration
+│   │   ├── Pangenome_clustering_heatmap.py  # Hierarchical clustering visualization
+│   │   ├── Pangenome_extraction.py  # Extract genes by presence/absence pattern
+│   │   ├── Pastml_analysis.py      # Ancestral state reconstruction (geographic/phenotypic)
+│   │   ├── Phylogeny_snps.py       # Add SNP distribution nodes to trees
+│   │   ├── Plot_GM_context.py      # Plot synteny/context with GWAS annotation
+│   │   ├── Plot_metadata.py        # Metadata distribution plots
+│   │   ├── Presence_absence_matrix.py  # Build gene presence/absence table
+│   │   ├── SkyGrid_plot.py         # BEAST Skygrid effective population size plots
+│   │   ├── SkyGrid_tree.py         # Skygrid tree preparation
+│   │   └── Tree_lineages.py        # Assign lineage IDs to tree tips
+│   ├── MG_motility/                # Motility gene-specific analysis
+│   │   ├── Analysis_vcf_motility.py  # SNP analysis in motility-related genes
+│   │   └── Motility_protein_preparation.py  # Motility protein database creation
+│   ├── Shell_scripts/              # Bash pipeline scripts for HPC/local execution
+│   │   ├── BCFtools.sh             # Consensus sequence generation from BAM
+│   │   ├── Download_sra.sh         # Batch download FASTQ from EBI/SRA
+│   │   ├── Gubbins_pipeline.sh     # Recombination detection and masking
+│   │   ├── Lineages_states.sh      # Lineage state inference pipeline
+│   │   ├── Lucy_Prokka.sh          # Prokka annotation wrapper
+│   │   ├── Lucy_SPADES_Assembly.sh # SPAdes assembly wrapper
+│   │   ├── Padloc.sh               # Defense system annotation (CRISPR/etc.)
+│   │   ├── Panaroo_pipeline.sh     # Pangenome construction
+│   │   ├── Poppunk_code.sh         # PopPUNK clustering (alternative lineage detection)
+│   │   ├── Prokka_command.sh       # Individual Prokka annotation runs
+│   │   ├── Prokka_complete_genomes.sh  # Prokka for complete/finished genomes
+│   │   ├── SH_comparison.sh        # Tree topology hypothesis tests
+│   │   ├── Sickle_readTrimming.sh  # Quality trimming (paired-end FASTQ)
+│   │   ├── SPADES_Pipeline.sh      # SPAdes assembly pipeline
+│   │   ├── Tree_formation.sh       # Phylogenetic tree file preparation
+│   │   ├── Treemaking_commands.sh  # IQ-TREE command generation and execution
+│   │   └── Vibrant.sh              # Prophage/phage prediction
+│   └── Slurm_scripts/              # HPC cluster job submission (SLURM)
+│       ├── IQ-Tree_slurm.sh        # ML phylogeny inference (scalable)
+│       ├── Mgall_mapping_slurm.sh  # Read mapping to reference (BBMap)
+│       └── Variant_calling.sh      # SNP/indel calling (bcftools)
 ```
 
 ---
@@ -359,14 +410,23 @@ Creates standardized name replacement dictionaries for Lucy/SRA samples.
 - `Lucy_replacements.pickle`
 - `Camille_replacements_foldername.pickle`
 
-#### **Rename_taxa_columns.py** / **Rename_taxa_folders.py**
+#### **Rename_taxa_columns.py** / **Rename_taxa_file.py** / **Rename_taxa_folders.py**
 
-Batch renaming utilities for dataframes and file systems.
+Batch renaming utilities for various data types.
 
 ```bash
-python Rename_taxa_columns.py --file input.tsv
-python Rename_taxa_folders.py --directory /path/to/data/
+python Rename_taxa_columns.py --file input.tsv        # Rename dataframe columns
+python Rename_taxa_file.py --file sequences.fasta     # Rename sequences in FASTA
+python Rename_taxa_folders.py --directory /path/to/data/  # Rename directory structures
 ```
+
+#### **Alignment_trimming_threshold.py**
+
+Filters sequence alignment based on sequence identity threshold.
+
+**Use case**: Remove divergent sequences or enforce minimum sequence similarity.
+
+**Outputs**: Filtered alignment FASTA file.
 
 ---
 
@@ -392,6 +452,109 @@ Generates NCBI submission manifest with MD5 checksums.
 Extracts metadata from GenBank files and combines with SRA/sample data.
 
 **Outputs**: `Metadata_genomes.xlsx` (multi-sheet Excel workbook)
+
+#### **Presence_absence_matrix.py**
+
+Builds gene presence/absence matrix from Panaroo outputs.
+
+**Inputs**: Panaroo CSV and Rtab files
+
+**Outputs**: Binary presence/absence TSV matrix (samples × genes)
+
+#### **Pangenome_extraction.py**
+
+Extracts specific gene clusters based on presence/absence patterns.
+
+**Features**: Filter by cluster ID, presence threshold, lineage-specific genes
+
+**Outputs**: FASTA files of extracted genes
+
+#### **Alignment_gubbins_comparison.py**
+
+Compares sequence alignments before and after Gubbins recombination masking.
+
+**Metrics**: SNP differences, recombined regions, sequence divergence
+
+**Outputs**: Comparison statistics and plots
+
+#### **Alignment_lineages.py**
+
+Extracts lineage-specific alignment subsets from full alignment.
+
+**Workflow**: 
+1. Load sample-to-lineage mapping
+2. Filter alignment to lineage samples
+3. Export lineage-specific FASTA
+
+**Outputs**: Per-lineage alignment FASTA files
+
+#### **Analysis_BEAST_bifurcation.py**
+
+Analyzes bifurcation times from BEAST time-calibrated trees.
+
+**Extracts**: Node ages, lineage divergence times, HPD intervals
+
+**Outputs**: Bifurcation timing table, ancestor-descendant lineage pairs
+
+#### **Ancestral_tree_metadata.py**
+
+Annotates internal tree nodes with ancestral states and metadata.
+
+**Features**: Links internal nodes to reconstructed sequences/traits
+
+**Outputs**: Annotated Newick tree with node metadata
+
+#### **Lineage_differences_vcf.py**
+
+Identifies SNPs that distinguish lineages using VCF data.
+
+**Workflow**:
+1. Load VCF files (alignment or individual sample VCFs)
+2. Define lineage membership from phylogenetic tree
+3. Extract lineage-diagnostic SNPs
+4. Classify by fixation status
+
+**Outputs**: SNP matrix, variant classification table
+
+#### **Pastml_analysis.py**
+
+Performs ancestral state reconstruction (ASR) for geographic locations or phenotypic traits.
+
+**Methods**: Maximum likelihood, joint reconstruction
+
+**Features**: Maps trait evolution onto phylogeny
+
+**Outputs**: Annotated tree with ancestral states at internal nodes
+
+#### **Plot_metadata.py**
+
+Generates distribution plots of sample metadata (collection dates, locations, traits).
+
+**Visualization types**: Time series, geographic distribution, trait distributions
+
+**Outputs**: PNG/PDF figures with publication-ready formatting
+
+#### **SkyGrid_tree.py**
+
+Prepares phylogenetic trees for BEAST Skygrid analysis.
+
+**Workflow**: 
+1. Validates tree format (Newick)
+2. Extracts sample dates/ages
+3. Formats for BEAST input
+
+**Outputs**: BEAST-compatible tree file with date metadata
+
+#### **dnds_data_preparation.py**
+
+Prepares codon alignment data for dN/dS ratio calculation.
+
+**Workflow**:
+1. Extracts coding sequences from GFF + genome
+2. Creates codon alignments
+3. Formats for dN/dS tools (e.g., codeml)
+
+**Outputs**: Codon alignment FASTA, control files
 
 #### **Lineage_differences.py**
 
@@ -580,6 +743,47 @@ bash Vibrant.sh /path/to/genomes/
 bash Padloc.sh /path/to/genomes/
 ```
 
+#### **SPADES_Pipeline.sh**
+
+De novo assembly pipeline using SPAdes (alternative to Lucy_SPADES_Assembly.sh).
+
+**Parameters**: Auto-detection of read length and insert size
+
+#### **Poppunk_code.sh**
+
+PopPUNK clustering for lineage/strain assignment (alternative phylogenetic approach).
+
+**Features**: Rapid lineage identification, strain-level resolution
+
+**Outputs**: Cluster assignments, pairwise distances
+
+#### **Tree_formation.sh**
+
+Prepares tree files for downstream analyses (format conversion, validation).
+
+**Supports**: Newick, Nexus, PhyloXML formats
+
+**Outputs**: Standardized tree files
+
+#### **Treemaking_commands.sh**
+
+Generates and executes IQ-TREE commands for phylogenetic inference.
+
+**Includes**: Model selection, bootstrap replication, alternative topologies
+
+**Outputs**: Inferred trees with support values
+
+#### **Lineages_states.sh**
+
+Lineage state inference pipeline (trait/phenotype assignment to lineages).
+
+**Workflow**: 
+1. Maps samples to lineages using phylogenetic tree
+2. Aggregates phenotypic/epidemiological data per lineage
+3. Infers lineage characteristics
+
+**Outputs**: Lineage state summary tables
+
 ---
 
 ### Slurm Scripts (HPC)
@@ -619,6 +823,14 @@ sbatch IQ-Tree_slurm.sh
 ## R Analysis Pipeline
 
 ### Core Functions (2_Functions/)
+
+#### **2_1_Index_computation_20240909.R**
+
+Computes phylogenetic indices and summary statistics.
+
+**Computes**: Tree balance, lineage diversity, node support metrics
+
+**Key outputs**: Index matrix for downstream analyses
 
 #### **2_2_Lineage_detection_20240909.R**
 
@@ -695,7 +907,41 @@ Tests virulence traits for Brownian motion evolution.
 
 **Metadata**: `meta.txt` contains sample dates, locations, virulence scores.
 
----
+#### **SNPs_tree_making.r**
+
+Constructs phylogenetic trees directly from SNP matrices.
+
+**Workflow**:
+1. Loads SNP matrix (samples × variable sites)
+2. Computes pairwise distances
+3. Builds neighbor-joining or UPGMA tree
+4. Visualizes with bootstrap support
+
+**Outputs**: Newick tree file, tree plot
+
+#### **Position_segregating_sites.R**
+
+Analyzes segregating sites across samples in phylogenetic context.
+
+**Features**: 
+- Counts shared/unique polymorphisms
+- Computes nucleotide diversity
+- Maps segregating sites to genes
+
+**Outputs**: Position tables, diversity plots
+
+#### **Skyline_lineages.R**
+
+Generates Bayesian Skyline plots separately for each detected lineage.
+
+**Features**:
+- Lineage-specific population size trajectories
+- HPD interval shading
+- Comparative trajectory visualization
+
+**Outputs**: Per-lineage PNG plots, combined figures
+
+
 
 ## Typical Use Cases
 
